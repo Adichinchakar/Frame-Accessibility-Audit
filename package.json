@@ -1,0 +1,14 @@
+{
+  "name": "frame-accessibility-audit",
+  "version": "1.0.0",
+  "description": "WCAG 2.2 Accessibility Checker for Figma Frames",
+  "scripts": {
+    "build": "tsc && npm run copy-ui",
+    "copy-ui": "copy ui.html dist\\ui.html",
+    "watch": "tsc --watch"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.118.0",
+    "typescript": "^5.9.3"
+  }
+}
