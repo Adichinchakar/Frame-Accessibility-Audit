@@ -1,5 +1,18 @@
-// code.ts - Enhanced plugin with overlay system and DeepSeek AI (FIXED)
-figma.showUI(__html__, { width: 360, height: 700 });
+// code.ts - Professional Accessibility Plugin with Advanced Features & Caching
+figma.showUI(__html__, { width: 380, height: 750, themeColors: true });
+
+const PLUGIN_VERSION = '1.0.0';
+const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000;
+const PLUGIN_DATA_KEY = 'a11y-analysis';
+
+const analysisCache = new Map<string, CachedAnalysis>();
+
+interface CachedAnalysis {
+  timestamp: number;
+  version: string;
+  contentHash: string;
+  results: AccessibilityIssue[];
+}
 
 interface AccessibilityIssue {
   elementId: string;
@@ -22,10 +35,171 @@ interface AccessibilityIssue {
 let selectedFrame: FrameNode | null = null;
 let currentIssues: AccessibilityIssue[] = [];
 let overlayFrame: FrameNode | null = null;
+let isPaused = false;
+let analysisProgress = 0;
+let totalElements = 0;
+
+function getCachedAnalysis(frame: FrameNode): CachedAnalysis | null {
+  let cached = analysisCache.get(frame.id);
+
+  if (!cached) {
+    const pluginData = frame.getPluginData(PLUGIN_DATA_KEY);
+    if (pluginData) {
+      try {
+        cached = JSON.parse(pluginData);
+        if (cached) {
+          analysisCache.set(frame.id, cached);
+        }
+      } catch (error) {
+        console.error('Failed to parse cached data:', error);
+        return null;
+      }
+    }
+  }
+
+  if (!cached) return null;
+
+  if (isCacheValid(frame, cached)) {
+    console.log('✓ Using valid cache for:', frame.name);
+    return cached;
+  }
+
+  console.log('✗ Cache invalid for:', frame.name);
+  clearFrameCache(frame);
+  return null;
+}
+
+function setCachedAnalysis(frame: FrameNode, results: AccessibilityIssue[]): void {
+  const cached: CachedAnalysis = {
+    timestamp: Date.now(),
+    version: PLUGIN_VERSION,
+    contentHash: generateContentHash(frame),
+    results: results
+  };
+
+  analysisCache.set(frame.id, cached);
+
+  try {
+    frame.setPluginData(PLUGIN_DATA_KEY, JSON.stringify(cached));
+    console.log('✓ Cached analysis for:', frame.name, 'ID:', frame.id);
+  } catch (error) {
+    console.error('Failed to save cache:', error);
+  }
+}
+
+function isCacheValid(frame: FrameNode, cached: CachedAnalysis): boolean {
+  if (isExpired(cached.timestamp)) {
+    return false;
+  }
+
+  if (cached.version !== PLUGIN_VERSION) {
+    return false;
+  }
+
+  const currentHash = generateContentHash(frame);
+  if (currentHash !== cached.contentHash) {
+    return false;
+  }
+
+  return true;
+}
+
+function isExpired(timestamp: number): boolean {
+  return (Date.now() - timestamp) > CACHE_DURATION;
+}
+
+function clearFrameCache(frame: FrameNode): void {
+  analysisCache.delete(frame.id);
+  frame.setPluginData(PLUGIN_DATA_KEY, '');
+}
+
+function clearAllCaches(): void {
+  analysisCache.clear();
+
+  const allFrames = figma.currentPage.findAll(node => node.type === 'FRAME') as FrameNode[];
+  allFrames.forEach(frame => {
+    if (frame.getPluginData(PLUGIN_DATA_KEY)) {
+      frame.setPluginData(PLUGIN_DATA_KEY, '');
+    }
+  });
+
+  figma.notify('✓ All caches cleared');
+}
+
+function generateContentHash(frame: FrameNode): string {
+  const fingerprint = {
+    childCount: frame.children.length,
+    texts: collectTextContent(frame),
+    colors: collectColors(frame),
+  };
+
+  return simpleHash(JSON.stringify(fingerprint));
+}
+
+function collectTextContent(node: SceneNode): string[] {
+  const texts: string[] = [];
+
+  function walk(n: SceneNode) {
+    if (n.type === 'TEXT') {
+      texts.push(n.characters);
+    }
+    if ('children' in n) {
+      n.children.forEach(child => walk(child));
+    }
+  }
+
+  walk(node);
+  return texts;
+}
+
+function collectColors(node: SceneNode): string[] {
+  const colors: string[] = [];
+
+  function walk(n: SceneNode) {
+    if (n.type === 'TEXT') {
+      const fills = n.fills;
+      if (Array.isArray(fills)) {
+        fills.forEach(fill => {
+          if (fill.type === 'SOLID') {
+            colors.push(`${fill.color.r},${fill.color.g},${fill.color.b}`);
+          }
+        });
+      }
+    }
+    if ('children' in n) {
+      n.children.forEach(child => walk(child));
+    }
+  }
+
+  walk(node);
+  return colors;
+}
+
+function simpleHash(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash).toString(36);
+}
+
+function getCacheAge(timestamp: number): string {
+  const ageMs = Date.now() - timestamp;
+  const ageMinutes = Math.floor(ageMs / 60000);
+  const ageHours = Math.floor(ageMinutes / 60);
+  const ageDays = Math.floor(ageHours / 24);
+
+  if (ageDays > 0) return `${ageDays}d ago`;
+  if (ageHours > 0) return `${ageHours}h ago`;
+  if (ageMinutes > 0) return `${ageMinutes}m ago`;
+  return 'just now';
+}
 
 figma.on('selectionchange', () => {
   const selection = figma.currentPage.selection;
-  
+
   if (selection.length === 0) {
     figma.ui.postMessage({ type: 'selection-error', message: 'No frame selected' });
     selectedFrame = null;
@@ -35,6 +209,14 @@ figma.on('selectionchange', () => {
   } else if (selection[0].type === 'FRAME') {
     selectedFrame = selection[0] as FrameNode;
     figma.ui.postMessage({ type: 'selection-valid', frameName: selectedFrame.name });
+
+    const cached = getCachedAnalysis(selectedFrame);
+    if (cached) {
+      figma.ui.postMessage({
+        type: 'cache-available',
+        age: getCacheAge(cached.timestamp)
+      });
+    }
   } else {
     figma.ui.postMessage({ type: 'selection-error', message: 'Please select a frame (not a single element)' });
     selectedFrame = null;
@@ -42,21 +224,64 @@ figma.on('selectionchange', () => {
 });
 
 figma.ui.onmessage = async (msg) => {
+  if (msg.type === 'pause-analysis') {
+    isPaused = true;
+    figma.notify('⏸ Analysis paused');
+    figma.ui.postMessage({ type: 'analysis-paused' });
+  }
+
+  if (msg.type === 'resume-analysis') {
+    isPaused = false;
+    figma.notify('▶ Analysis resumed');
+    figma.ui.postMessage({ type: 'analysis-resumed' });
+  }
+
   if (msg.type === 'analyze') {
     try {
       console.log('Analysis started');
+      isPaused = false;
+      analysisProgress = 0;
 
       if (!selectedFrame) {
         figma.ui.postMessage({ type: 'error', message: 'Please select a frame first' });
         return;
       }
 
+      const forceReanalyze = msg.forceReanalyze || false;
+
+      if (!forceReanalyze) {
+        const cached = getCachedAnalysis(selectedFrame);
+        if (cached) {
+          console.log('⚡ Using cached results');
+          const groupedIssues = groupIssuesByElement(cached.results);
+          figma.ui.postMessage({
+            type: 'analysis-complete',
+            issues: groupedIssues,
+            totalIssues: cached.results.length,
+            fromCache: true,
+            cacheAge: getCacheAge(cached.timestamp)
+          });
+
+          if (cached.results.length > 0 && msg.showOverlay) {
+            currentIssues = cached.results;
+            await createOverlayFrame(selectedFrame, cached.results);
+          }
+
+          figma.notify(`⚡ Loaded from cache (${getCacheAge(cached.timestamp)})`);
+          return;
+        }
+      }
+
+      console.log('Running fresh analysis');
       const checks = msg.checks;
       currentIssues = [];
 
       clearOverlays();
 
-      console.log('Analyzing frame:', selectedFrame.name);
+      totalElements = countElements(selectedFrame);
+      figma.ui.postMessage({ type: 'analysis-progress', progress: 0, total: totalElements });
+
+      console.log('Analyzing frame:', selectedFrame.name, 'with', totalElements, 'elements');
       await analyzeFrame(selectedFrame, checks);
       console.log('Analysis complete. Issues found:', currentIssues.length);
 
@@ -65,16 +290,19 @@ figma.ui.onmessage = async (msg) => {
         await enhanceWithAI(currentIssues, msg.apiKey);
       }
 
+      setCachedAnalysis(selectedFrame, currentIssues);
+
       const groupedIssues = groupIssuesByElement(currentIssues);
 
       figma.ui.postMessage({
         type: 'analysis-complete',
         issues: groupedIssues,
-        totalIssues: currentIssues.length
+        totalIssues: currentIssues.length,
+        fromCache: false
       });
 
       if (currentIssues.length > 0 && msg.showOverlay) {
-        createOverlayFrame(selectedFrame, currentIssues);
+        await createOverlayFrame(selectedFrame, currentIssues);
       }
 
       figma.notify(`✓ Analysis complete! Found ${currentIssues.length} issues.`);
@@ -107,7 +335,29 @@ figma.ui.onmessage = async (msg) => {
     }
   }
 
-  // Handle settings storage
+  if (msg.type === 'clear-cache') {
+    if (selectedFrame) {
+      clearFrameCache(selectedFrame);
+      figma.notify('✓ Cache cleared for this frame');
+      figma.ui.postMessage({ type: 'cache-cleared' });
+    }
+  }
+
+  if (msg.type === 'clear-all-caches') {
+    clearAllCaches();
+  }
+
+  if (msg.type === 'get-cache-info') {
+    if (selectedFrame) {
+      const cached = getCachedAnalysis(selectedFrame);
+      figma.ui.postMessage({
+        type: 'cache-info',
+        hasCached: !!cached,
+        age: cached ? getCacheAge(cached.timestamp) : null
+      });
+    }
+  }
+
   if (msg.type === 'save-settings') {
     await figma.clientStorage.setAsync('deepseek_api_key', msg.apiKey);
     await figma.clientStorage.setAsync('use_ai', msg.useAI);
@@ -117,16 +367,52 @@ figma.ui.onmessage = async (msg) => {
   if (msg.type === 'load-settings') {
     const apiKey = await figma.clientStorage.getAsync('deepseek_api_key');
     const useAI = await figma.clientStorage.getAsync('use_ai');
-    figma.ui.postMessage({ 
-      type: 'settings-loaded', 
+    figma.ui.postMessage({
+      type: 'settings-loaded',
       apiKey: apiKey || '',
       useAI: useAI || false
     });
   }
 };
 
+function countElements(node: SceneNode): number {
+  let count = 1;
+  if ('children' in node) {
+    for (const child of node.children) {
+      count += countElements(child);
+    }
+  }
+  return count;
+}
+
 async function analyzeFrame(frame: FrameNode, checks: any) {
+  let processedElements = 0;
+
   async function checkNode(node: SceneNode) {
+    // Check if paused
+    if (isPaused) {
+      await new Promise(resolve => {
+        const checkPause = setInterval(() => {
+          if (!isPaused) {
+            clearInterval(checkPause);
+            resolve(null);
+          }
+        }, 100);
+      });
+    }
+
+    processedElements++;
+    analysisProgress = Math.round((processedElements / totalElements) * 100);
+
+    // Send progress update every 10 elements
+    if (processedElements % 10 === 0) {
+      figma.ui.postMessage({
+        type: 'analysis-progress',
+        progress: analysisProgress,
+        current: processedElements,
+        total: totalElements
+      });
+    }
     if (node.type === 'TEXT') {
       if (checks.colorContrast) {
         await checkTextContrast(node);
@@ -158,14 +444,30 @@ async function analyzeFrame(frame: FrameNode, checks: any) {
 
 async function checkTextContrast(textNode: TextNode) {
   try {
-    // Safely load font
+    // Safely load font with error handling
     const fontName = textNode.fontName;
     if (fontName === figma.mixed) {
       console.log('Mixed fonts detected, skipping:', textNode.name);
       return;
     }
-    
-    await figma.loadFontAsync(fontName as FontName);
+
+    try {
+      await figma.loadFontAsync(fontName as FontName);
+    } catch (fontError) {
+      console.warn('Font loading failed for:', fontName, '- Using fallback');
+      // Try to load Inter Regular as fallback
+      try {
+        await figma.loadFontAsync({ family: 'Inter', style: 'Regular' });
+      } catch (fallbackError) {
+        console.error('Fallback font also failed, skipping node');
+        figma.ui.postMessage({
+          type: 'font-error',
+          message: `Could not load font: ${JSON.stringify(fontName)}`,
+          node: textNode.name
+        });
+        return;
+      }
+    }
     
     const fontSize = textNode.fontSize as number;
     const bgColor = getBackgroundColor(textNode);
@@ -410,9 +712,14 @@ Return ONLY a JSON array with improved suggestions, one per issue, in the same o
   }
 }
 
-function createOverlayFrame(targetFrame: FrameNode, issues: AccessibilityIssue[]) {
+async function createOverlayFrame(targetFrame: FrameNode, issues: AccessibilityIssue[]) {
   const frameBounds = targetFrame.absoluteBoundingBox;
   if (!frameBounds) return;
+
+  console.log('Creating overlay for', issues.length, 'issues');
+
+  // Clear any existing overlays first
+  clearOverlays();
 
   overlayFrame = figma.createFrame();
   overlayFrame.name = '🔍 A11Y Overlay';
@@ -428,50 +735,104 @@ function createOverlayFrame(targetFrame: FrameNode, issues: AccessibilityIssue[]
     targetFrame.parent.insertChild(targetIndex + 1, overlayFrame);
   }
 
-  // Create highlight boxes for each issue - FIXED
-  issues.forEach(issue => {
-    if (issue.bounds && overlayFrame) {
-      const box = figma.createRectangle();
-      box.name = `Issue: ${issue.issueType}`;
-      
-      box.x = issue.bounds.x - frameBounds.x;
-      box.y = issue.bounds.y - frameBounds.y;
-      box.resize(issue.bounds.width, issue.bounds.height);
-      
-      const color = issue.severity === 'fail' 
-        ? { r: 0.95, g: 0.26, b: 0.21 }
-        : { r: 1, g: 0.76, b: 0.03 };
-      
-      box.fills = [];
-      box.strokes = [{ type: 'SOLID', color }];
-      box.strokeWeight = 2;
-      box.dashPattern = [5, 5];
-      box.opacity = 0.8;
-      
-      // Add label as separate text node - FIXED
-      const label = figma.createText();
-      label.characters = issue.severity === 'fail' ? '✕' : '⚠';
-      label.fontSize = 14;
-      label.fills = [{ type: 'SOLID', color }];
-      label.x = box.x - 10;
-      label.y = box.y - 18;
-      
-      overlayFrame.appendChild(box);
-      overlayFrame.appendChild(label);
+  // Load font once for all labels
+  try {
+    await figma.loadFontAsync({ family: 'Inter', style: 'Regular' });
+  } catch (error) {
+    console.error('Failed to load font for overlay labels:', error);
+    // Try fallback fonts
+    try {
+      await figma.loadFontAsync({ family: 'Roboto', style: 'Regular' });
+    } catch (fallbackError) {
+      try {
+        await figma.loadFontAsync({ family: 'Arial', style: 'Regular' });
+      } catch (finalError) {
+        console.error('All fonts failed, overlay will have no labels');
+        figma.notify('⚠ Overlay created but labels failed to load');
+      }
     }
-  });
+  }
 
-  figma.notify('✓ Overlay created! Toggle visibility from the plugin.');
+  // Create highlight boxes for each issue
+  let createdCount = 0;
+  for (const issue of issues) {
+    if (issue.bounds && overlayFrame) {
+      try {
+        const box = figma.createRectangle();
+        box.name = `Issue: ${issue.issueType}`;
+
+        box.x = issue.bounds.x - frameBounds.x;
+        box.y = issue.bounds.y - frameBounds.y;
+        box.resize(issue.bounds.width, issue.bounds.height);
+
+        const color = issue.severity === 'fail'
+          ? { r: 0.95, g: 0.26, b: 0.21 }
+          : { r: 1, g: 0.76, b: 0.03 };
+
+        box.fills = [];
+        box.strokes = [{ type: 'SOLID', color }];
+        box.strokeWeight = 3;
+        box.dashPattern = [8, 4];
+        box.opacity = 0.9;
+
+        overlayFrame.appendChild(box);
+
+        // Try to add label (may fail if font loading failed)
+        try {
+          const label = figma.createText();
+          label.characters = issue.severity === 'fail' ? '✕' : '⚠';
+          label.fontSize = 16;
+          label.fills = [{ type: 'SOLID', color }];
+          label.x = box.x - 12;
+          label.y = box.y - 22;
+          overlayFrame.appendChild(label);
+        } catch (labelError) {
+          console.warn('Failed to create label:', labelError);
+        }
+
+        createdCount++;
+      } catch (error) {
+        console.error('Failed to create overlay element:', error);
+      }
+    }
+  }
+
+  console.log('Overlay created with', createdCount, 'elements');
+  figma.notify(`✓ Overlay created with ${createdCount} highlighted issues!`);
 }
 
 function clearOverlays() {
-  if (overlayFrame) {
-    overlayFrame.remove();
-    overlayFrame = null;
+  try {
+    // Clear the tracked overlay frame
+    if (overlayFrame) {
+      try {
+        overlayFrame.remove();
+      } catch (error) {
+        console.warn('Failed to remove tracked overlay:', error);
+      }
+      overlayFrame = null;
+    }
+
+    // Find and remove any orphaned overlays
+    const orphanedOverlays = figma.currentPage.findAll(node => node.name === '🔍 A11Y Overlay');
+    console.log('Found', orphanedOverlays.length, 'orphaned overlays to clean up');
+
+    orphanedOverlays.forEach(node => {
+      try {
+        // Check if node still exists in the document before removing
+        if (node && node.parent) {
+          node.remove();
+        }
+      } catch (error) {
+        console.warn('Failed to remove orphaned overlay:', error);
+        // Node might have already been deleted, continue
+      }
+    });
+
+    console.log('Overlays cleared successfully');
+  } catch (error) {
+    console.error('Error in clearOverlays:', error);
   }
-  
-  const orphanedOverlays = figma.currentPage.findAll(node => node.name === '🔍 A11Y Overlay');
-  orphanedOverlays.forEach(node => node.remove());
 }
 
 function getTextColor(node: TextNode): RGB | null {
