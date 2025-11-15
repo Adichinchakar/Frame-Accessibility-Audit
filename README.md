@@ -1,291 +1,302 @@
-# 🎯 Frame Accessibility Audit - Figma Plugin
+# 🎯 A11y Audit Pro - Figma Accessibility Plugin
 
-A professional WCAG 2.2 AA/AAA accessibility checker for Figma frames with intelligent caching.
-
----
-
-## 🚀 Quick Start
-
-**New to this project?** Start here: **[QUICK_START.md](QUICK_START.md)** (5-minute setup)
+**Status:** 🚧 Pre-Launch Development  
+**Target Launch:** 4 weeks  
+**Version:** 1.0.0 (Marketplace Ready)
 
 ---
 
-## 📚 Documentation Index
+## 🚀 **START HERE** → [QUICK START NEXT STEPS](docs/QUICK_START_NEXT_STEPS.md)
 
-### 🎯 Getting Started
-- **[QUICK_START.md](QUICK_START.md)** - 5-minute migration guide
-- **[MIGRATION_SUMMARY.md](MIGRATION_SUMMARY.md)** - Complete Bolt → VS Code migration
+**New to this project?** Read this first for immediate action items.
 
-### 🔧 Technical Documentation
-- **[CACHE_TESTING_GUIDE.md](CACHE_TESTING_GUIDE.md)** - Test cache system step-by-step
-- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Fix all issues
+---
+
+## 📚 Complete Documentation Index
+
+### 🎯 Planning & Strategy
+- **[MASTER_PLAN.md](docs/MASTER_PLAN.md)** ⭐ - Complete product, pricing, marketing & launch strategy (100+ pages)
+  - Plugin naming & SEO
+  - Pricing & monetization ($9/mo Pro, $29/mo Team)
+  - Onboarding flow design
+  - Settings & configuration
+  - Marketing strategy
+  - UI/UX improvements with Shadcn
+  - Competitive analysis (vs Stark)
+  - Development roadmap
+
+### 🛠️ Implementation Guides
+- **[WEEK1_IMPLEMENTATION.md](docs/WEEK1_IMPLEMENTATION.md)** - Step-by-step code for Week 1 features
+  - WCAG version switching
+  - Settings panel
+  - UI change detection
+  - Code examples & testing
+
+- **[CONTEXT_REFERENCE.md](docs/CONTEXT_REFERENCE.md)** - Anti-hallucination reference
+  - All critical facts
+  - Current status
+  - Tech stack details
+  - Prevents AI confusion in long conversations
+
+- **[QUICK_START_NEXT_STEPS.md](docs/QUICK_START_NEXT_STEPS.md)** - What to do RIGHT NOW
+  - Immediate actions (24 hours)
+  - Week 1 plan
+  - Testing checklist
+  - Launch preparation
+
+### 🏗️ Technical Documentation
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - System architecture & database design
+- **[CACHE_TESTING_GUIDE.md](CACHE_TESTING_GUIDE.md)** - How to test cache system
+- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Fix common issues
 - **[ERROR_ANALYSIS.md](ERROR_ANALYSIS.md)** - Understanding console errors
 
 ---
 
-## ✨ Features
+## ✨ What This Plugin Does
 
-### Core Accessibility Checks
+**"The most comprehensive WCAG 2.2 accessibility checker with AI-powered fixes and team collaboration"**
+
+### Core Features (Working)
 - ✅ **Color Contrast** - WCAG 2.2 AA/AAA text contrast
 - ✅ **Text Spacing** - Letter spacing validation (0.12em)
 - ✅ **Line Height** - Line height checking (1.5x minimum)
 - ✅ **Paragraph Spacing** - Paragraph spacing (2.0x minimum)
 - ✅ **Non-Text Contrast** - UI element contrast (3:1)
+- ✅ **Visual Overlays** - Highlight issues directly on design
+- ✅ **One-Click Fixes** - Apply WCAG-compliant fixes instantly
+- ✅ **Persistent History** - Supabase-backed analysis storage
+- ✅ **Intelligent Caching** - 3-level cache (95% faster repeat analyses)
 
-### Advanced Features
-- 🚀 **Intelligent Caching** - 95% faster on repeat analyses
-- 🎨 **Visual Overlays** - Highlight issues directly on design
-- 🔧 **One-Click Fixes** - Apply WCAG-compliant fixes instantly
-- ⏯️ **Pause/Resume** - Control long-running analyses
-- 📊 **Detailed Reports** - Grouped issues by element
-- 💾 **Persistent Storage** - Cache survives plugin restarts
-
-### Cache System
-- **Memory Cache** - Instant results (< 500ms)
-- **Smart Invalidation** - Detects content changes
-- **7-Day TTL** - Automatic cache expiration
-- **Manual Controls** - Clear single/all caches
-- **Visual Indicators** - Cache status and age display
+### Features to Build (This Month)
+- 🚧 **WCAG Version Switching** - Toggle between 2.0/2.1/2.2 (Week 1)
+- 🚧 **Settings Panel** - Configure checks & preferences (Week 1)
+- 🚧 **UI Change Detection** - Alert on frame modifications (Week 1)
+- 🚧 **Stripe Integration** - Paid plans & licensing (Week 2)
+- 🚧 **Onboarding Flow** - 5-step wizard for new users (Week 2)
+- 🚧 **Shadcn UI** - Professional, accessible components (Week 3)
+- 🚧 **Export Reports** - PDF/CSV export (Week 3)
 
 ---
 
-## 📦 Installation
+## 💰 Pricing Strategy
 
-### From Bolt to VS Code
+| Plan | Price | Features |
+|------|-------|----------|
+| **Free** | $0/mo | 10 analyses/month, basic checks |
+| **Pro** | $9/mo | Unlimited analyses, AI suggestions, history |
+| **Team** | $29/mo (5 seats) | Everything + collaboration |
+| **Enterprise** | Custom | Unlimited seats, SSO, white-label |
 
-1. **Copy files** from Bolt to VS Code project folder:
-   ```
-   ├── code.ts
-   ├── ui.html
-   ├── manifest.json
-   ├── package.json
-   └── tsconfig.json
-   ```
+**vs Competitors:**
+- 25% cheaper than Stark ($9 vs $12)
+- Better team pricing ($5.80/seat vs $15/seat)
+- Only plugin with WCAG 2.0/2.1/2.2 switching
 
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-
-3. **Build:**
-   ```bash
-   npm run build
-   ```
-
-4. **Load in Figma:**
-   ```
-   Figma → Plugins → Development → Import plugin from manifest...
-   ```
-
-**Detailed instructions:** [MIGRATION_SUMMARY.md](MIGRATION_SUMMARY.md)
+[Full pricing strategy](docs/MASTER_PLAN.md#3-pricing--monetization-strategy)
 
 ---
 
-## 🎮 Usage
+## 🎯 Competitive Advantages
 
-### Basic Workflow
+### Our Unique Features:
+1. **WCAG Version Switching** - Only plugin supporting 2.0/2.1/2.2 toggle
+2. **AI-Powered Fixes** - Plain English suggestions
+3. **Best Price-to-Value** - More features, lower cost
+4. **Team Collaboration** - Affordable team pricing
+5. **Frame-Level Analysis** - Not just components
 
-1. **Select a frame** in Figma
-2. **Run plugin** from Plugins menu
-3. **Configure checks** (or use defaults)
-4. **Click "Start Analysis"**
-5. **Review results** and apply fixes
+### vs Stark (Market Leader):
+- ✅ 25% cheaper
+- ✅ WCAG version switching (Stark doesn't have)
+- ✅ Simpler UI
+- ✅ 60% cheaper team plans
+- ❌ Not cross-platform (Figma only)
 
-### Cache Workflow
-
-1. **First analysis** - Takes 2-10 seconds (depending on complexity)
-2. **Second analysis** - Loads instantly from cache (< 500ms)
-3. **Modify frame** - Cache automatically invalidates
-4. **Re-analyze** - Creates fresh cache
-
-**Full cache testing:** [CACHE_TESTING_GUIDE.md](CACHE_TESTING_GUIDE.md)
+[Full competitive analysis](docs/MASTER_PLAN.md#9-competitive-analysis)
 
 ---
 
-## 🔧 Development
+## 🏗️ Technical Stack
 
-### Build Commands
+**Frontend:**
+- TypeScript (plugin logic)
+- HTML/CSS/JS (UI)
+- Tailwind CSS (styling)
+- Shadcn-inspired components
 
+**Backend:**
+- Supabase (PostgreSQL)
+- Stripe (payments)
+- Edge Functions (webhooks)
+
+**Build:**
+- tsc (TypeScript compiler)
+- npm scripts (build automation)
+
+---
+
+## 📦 Project Structure
+
+```
+Frame-Accessibility-Audit/
+├── code.ts                      # Main plugin logic
+├── ui.html                      # Plugin UI
+├── manifest.json                # Figma config
+├── package.json                 # Dependencies
+├── tsconfig.json                # TypeScript config
+├── dist/                        # Build output
+│   ├── code.js                 # Compiled code
+│   └── ui.html                 # Copied UI
+└── docs/                        # NEW: Comprehensive docs
+    ├── MASTER_PLAN.md          # Complete strategy (⭐ START HERE)
+    ├── WEEK1_IMPLEMENTATION.md # Code guide
+    ├── CONTEXT_REFERENCE.md    # Facts reference
+    ├── QUICK_START_NEXT_STEPS.md # Action items
+    └── [other docs]
+```
+
+---
+
+## 🚀 Quick Start
+
+### For First-Time Setup:
+1. **Read:** [QUICK_START_NEXT_STEPS.md](docs/QUICK_START_NEXT_STEPS.md) (5 min)
+2. **Install:** `npm install`
+3. **Build:** `npm run build`
+4. **Load:** Figma → Plugins → Development → Import from manifest
+5. **Start Week 1:** Follow [WEEK1_IMPLEMENTATION.md](docs/WEEK1_IMPLEMENTATION.md)
+
+### Development Workflow:
 ```bash
+# Watch mode (auto-rebuild)
+npm run watch
+
 # One-time build
 npm run build
-
-# Watch mode (auto-rebuild on save)
-npm run watch
 
 # Clean build
 rm -rf dist/ && npm run build
 ```
 
-### Development Workflow
-
-1. Make changes to `code.ts` or `ui.html`
-2. Build: `npm run build`
-3. Reload plugin in Figma (⟳ Reload)
-4. Test changes
+Then reload plugin in Figma after each build.
 
 ---
 
-## 📊 Performance
+## 📅 4-Week Launch Roadmap
 
-| Scenario | Time | Source |
-|----------|------|--------|
-| First analysis (50 elements) | 2-5s | Fresh scan |
-| Cached analysis (50 elements) | < 500ms | Memory cache |
-| First analysis (200 elements) | 8-12s | Fresh scan |
-| Cached analysis (200 elements) | < 500ms | Memory cache |
+### Week 1: Core Features
+- WCAG version switching (2.0/2.1/2.2)
+- Settings panel (checks, display, cache)
+- UI change detection
 
-**Cache hit rate:** 80-90% in typical usage
+### Week 2: Monetization & Onboarding
+- Stripe integration (checkout, webhooks, licensing)
+- Onboarding flow (5 screens)
+- Usage tracking
+
+### Week 3: UI/UX Polish
+- Shadcn UI components
+- Loading/empty/error states
+- Accessibility testing
+
+### Week 4: Launch
+- Submit to Figma Marketplace
+- Product Hunt launch
+- Social media campaign
+- Monitor feedback
+
+[Detailed roadmap](docs/MASTER_PLAN.md#7-technical-implementation-roadmap)
+
+---
+
+## 🎯 Success Metrics
+
+**Goals:**
+- 1,000 users in 3 months
+- 15% Free → Pro conversion
+- $2,800 MRR by month 3
+- 4.5+ star rating on Figma
+
+**Track:**
+- Daily signups
+- Activation rate (first analysis)
+- Analyses per user
+- Churn rate
+- Support tickets
 
 ---
 
 ## 🐛 Troubleshooting
 
-### Common Issues
+**Common Issues:**
+- Build fails → See [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+- Cache not working → See [CACHE_TESTING_GUIDE.md](CACHE_TESTING_GUIDE.md)
+- Console errors → See [ERROR_ANALYSIS.md](ERROR_ANALYSIS.md)
 
-#### Build fails on Windows
-**Fix:** Updated in `package.json` - now cross-platform ✅
-
-#### Cache not working
-**Solution:** See [CACHE_TESTING_GUIDE.md](CACHE_TESTING_GUIDE.md)
-
-#### DeepSeek API 402 error
-**Solution:** See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Option 2: Remove AI code
-
-#### Console full of warnings
-**Solution:** See [ERROR_ANALYSIS.md](ERROR_ANALYSIS.md) - 97% are harmless Figma platform warnings
-
-**Full troubleshooting:** [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+**Need Help?**
+1. Check documentation first
+2. Search Figma Plugin docs
+3. Ask in Figma community Slack
 
 ---
 
-## 📋 Project Structure
+## 📊 Current Status
 
-```
-figma-accessibility-plugin/
-├── code.ts                    # Main plugin logic (TypeScript)
-├── ui.html                    # Plugin UI (HTML + CSS + JS)
-├── manifest.json              # Figma plugin configuration
-├── package.json               # npm dependencies & scripts
-├── tsconfig.json              # TypeScript configuration
-├── dist/                      # Build output (generated)
-│   ├── code.js               # Compiled plugin code
-│   └── ui.html               # Copied UI file
-└── docs/                      # Documentation
-    ├── QUICK_START.md
-    ├── MIGRATION_SUMMARY.md
-    ├── CACHE_TESTING_GUIDE.md
-    ├── TROUBLESHOOTING.md
-    └── ERROR_ANALYSIS.md
-```
+### ✅ Completed:
+- [x] Core accessibility checks (color, text, spacing)
+- [x] Visual overlays
+- [x] One-click fixes
+- [x] 3-level caching system
+- [x] Supabase integration
+- [x] Persistent history
+- [x] **Comprehensive documentation (NEW!)**
 
----
+### 🚧 In Progress:
+- [ ] WCAG version switching
+- [ ] Settings panel
+- [ ] UI change detection
 
-## 🔒 Cache Storage
-
-### Storage Locations
-
-1. **Runtime Memory** (`analysisCache` Map)
-   - Fast, in-memory
-   - Cleared when plugin closes
-
-2. **Persistent Storage** (Figma Plugin Data API)
-   - Stored in `.fig` file
-   - Survives plugin restarts
-   - Per-frame storage
-
-### Cache Structure
-
-```typescript
-interface CachedAnalysis {
-  timestamp: number;           // When cached
-  version: string;             // Plugin version
-  contentHash: string;         // Frame content fingerprint
-  results: AccessibilityIssue[]; // Analysis results
-}
-```
-
-### Cache Invalidation Triggers
-
-- ✅ Content changes (text, colors, structure)
-- ✅ 7-day expiration
-- ✅ Plugin version change
-- ✅ Manual clear (user action)
+### 📋 Planned:
+- [ ] Stripe integration
+- [ ] Onboarding flow
+- [ ] Shadcn UI
+- [ ] Export reports
+- [ ] Team collaboration
 
 ---
 
-## 🎯 WCAG Compliance
+## 💡 Key Decisions Made
 
-This plugin checks against:
+**Plugin Name:** A11y Audit Pro (or AccessFlow Pro backup)  
+**Pricing:** $9/mo Pro, $29/mo Team (5 seats)  
+**WCAG Support:** 2.0/2.1/2.2 with version switching  
+**Target Market:** Individual designers & small teams  
+**Launch Timeline:** 4 weeks from now
 
-- **WCAG 2.2 Level AA** (minimum requirements)
-- **WCAG 2.2 Level AAA** (enhanced requirements)
-
-### Success Criteria Covered
-
-- **1.4.3** Contrast (Minimum) - AA
-- **1.4.6** Contrast (Enhanced) - AAA
-- **1.4.8** Visual Presentation - AAA
-- **1.4.11** Non-text Contrast - AA
-- **1.4.12** Text Spacing - AA
+[See full decision rationale](docs/MASTER_PLAN.md)
 
 ---
 
-## 🔮 Optional Features
+## 📞 Important Links
 
-### AI Enhancement (DeepSeek)
-
-**Status:** ⚠️ Currently has billing issue (402 error)
-
-**Options:**
-1. Fix billing at [platform.deepseek.com](https://platform.deepseek.com/)
-2. Remove AI code (5 minutes - see [TROUBLESHOOTING.md](TROUBLESHOOTING.md))
-
-**Recommendation:** Remove AI code if not actively using it.
-
----
-
-## 📈 Roadmap
-
-### Current Version: 1.0.0
-- ✅ WCAG 2.2 AA/AAA checks
-- ✅ Intelligent caching system
-- ✅ Visual overlays
-- ✅ One-click fixes
-- ⚠️ AI enhancement (optional, needs billing fix)
-
-### Future Enhancements
-- [ ] Export reports (PDF/CSV)
-- [ ] Batch frame analysis
-- [ ] Custom check configuration
-- [ ] Accessibility score metrics
-- [ ] Team collaboration features
+- **Figma Plugin API:** https://www.figma.com/plugin-docs/
+- **Supabase Docs:** https://supabase.com/docs
+- **Stripe API:** https://stripe.com/docs
+- **WCAG 2.2:** https://www.w3.org/TR/WCAG22/
 
 ---
 
 ## 🤝 Contributing
 
-### Before Contributing
+**For AI Assistants:**
+Always read [CONTEXT_REFERENCE.md](docs/CONTEXT_REFERENCE.md) first to avoid hallucinations.
 
-1. Read [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for setup
-2. Test cache system using [CACHE_TESTING_GUIDE.md](CACHE_TESTING_GUIDE.md)
-3. Follow existing code style
-
-### Development Setup
-
-```bash
-# Clone repository
-git clone <your-repo-url>
-cd figma-accessibility-plugin
-
-# Install dependencies
-npm install
-
-# Start development
-npm run watch
-
-# In another terminal, load plugin in Figma
-```
+**For Developers:**
+1. Fork repo
+2. Read [ARCHITECTURE.md](ARCHITECTURE.md)
+3. Follow [WEEK1_IMPLEMENTATION.md](docs/WEEK1_IMPLEMENTATION.md)
+4. Test thoroughly
+5. Submit PR
 
 ---
 
@@ -295,51 +306,24 @@ MIT License - See LICENSE file for details
 
 ---
 
-## 🆘 Support
+## 🎉 Let's Build This!
 
-### Getting Help
+**You have everything you need:**
+- ✅ Complete strategy (MASTER_PLAN.md)
+- ✅ Step-by-step code guide (WEEK1_IMPLEMENTATION.md)
+- ✅ Context reference (CONTEXT_REFERENCE.md)
+- ✅ Clear timeline (4 weeks)
+- ✅ Competitive research (vs Stark)
+- ✅ Pricing strategy ($9/mo Pro)
+- ✅ Marketing plan (Product Hunt, social media)
 
-1. **Check documentation first:**
-   - [QUICK_START.md](QUICK_START.md) - Setup help
-   - [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common issues
-   - [ERROR_ANALYSIS.md](ERROR_ANALYSIS.md) - Console errors
+**Next Steps:**
+1. Read [QUICK_START_NEXT_STEPS.md](docs/QUICK_START_NEXT_STEPS.md)
+2. Make plugin name decision
+3. Set up Stripe account
+4. Start Week 1 implementation
 
-2. **Debug steps:**
-   - Enable console logging
-   - Check [CACHE_TESTING_GUIDE.md](CACHE_TESTING_GUIDE.md)
-   - Review error messages in [ERROR_ANALYSIS.md](ERROR_ANALYSIS.md)
-
-3. **Still stuck?**
-   - Include console logs
-   - Describe expected vs actual behavior
-   - List steps to reproduce
-
----
-
-## 🎉 Success Indicators
-
-### Plugin is Working Correctly When:
-
-- ✅ Build completes without errors
-- ✅ Plugin loads in Figma
-- ✅ Analysis runs successfully
-- ✅ Cache banner appears on repeat analyses
-- ✅ Results load instantly (< 500ms) from cache
-- ✅ Visual overlays display correctly
-- ✅ Fixes can be applied
-- ✅ No blocking errors in console
-
-**90% of console "errors" are harmless Figma platform warnings** - See [ERROR_ANALYSIS.md](ERROR_ANALYSIS.md)
-
----
-
-## 📞 Quick Links
-
-- **Setup:** [QUICK_START.md](QUICK_START.md) (5 min)
-- **Migration:** [MIGRATION_SUMMARY.md](MIGRATION_SUMMARY.md)
-- **Testing:** [CACHE_TESTING_GUIDE.md](CACHE_TESTING_GUIDE.md)
-- **Issues:** [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
-- **Errors:** [ERROR_ANALYSIS.md](ERROR_ANALYSIS.md)
+**Questions?** Check the docs first, they're comprehensive! 📚
 
 ---
 

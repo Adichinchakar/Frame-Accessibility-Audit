@@ -1,11 +1,17 @@
-// code.ts - Simplified Accessibility Plugin with Working History
-figma.showUI(__html__, { width: 380, height: 750, themeColors: true });
+// code.ts - A11y Audit Pro - Complete Implementation with All Features
+figma.showUI(__html__, { width: 400, height: 750, themeColors: true });
 
 const PLUGIN_VERSION = '1.0.0';
-const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000;
 const PLUGIN_DATA_KEY = 'a11y-analysis';
+const SETTINGS_KEY = 'a11y-settings';
+const LAST_HASH_KEY = 'a11y-last-hash';
 
 const analysisCache = new Map<string, CachedAnalysis>();
+let lastFrameHashes = new Map<string, string>();
+
+// ============================================
+// INTERFACES & TYPES
+// ============================================
 
 interface CachedAnalysis {
   timestamp: number;
@@ -18,7 +24,7 @@ interface AccessibilityIssue {
   elementId: string;
   elementName: string;
   issueType: string;
-  severity: 'fail' | 'warning';
+  severity: 'fail' | 'warning' | 'pass';
   wcagLevel: 'AA' | 'AAA';
   currentValue: string;
   requiredValue: string;
@@ -32,12 +38,141 @@ interface AccessibilityIssue {
   };
 }
 
+interface UserSettings {
+  wcag: {
+    version: '2.0' | '2.1' | '2.2';
+    level: 'AA' | 'AAA';
+  };
+  checks: {
+    colorContrast: boolean;
+    textSpacing: boolean;
+    lineHeight: boolean;
+    paragraphSpacing: boolean;
+    nonTextContrast: boolean;
+  };
+  display: {
+    showOverlays: boolean;
+    groupByElement: boolean;
+    showOnlyFailures: boolean;
+    overlayOpacity: number;
+  };
+  cache: {
+    ttlDays: number;
+  };
+}
+
+// ============================================
+// WCAG THRESHOLDS
+// ============================================
+
+const WCAG_THRESHOLDS = {
+  '2.0': {
+    AA: {
+      colorContrast: { normalText: 4.5, largeText: 3.0 },
+      nonTextContrast: 0,
+      textSpacing: null,
+    },
+    AAA: {
+      colorContrast: { normalText: 7.0, largeText: 4.5 },
+      nonTextContrast: 0,
+      textSpacing: null,
+    },
+  },
+  '2.1': {
+    AA: {
+      colorContrast: { normalText: 4.5, largeText: 3.0 },
+      nonTextContrast: 3.0,
+      textSpacing: { letterSpacing: 0.12, lineHeight: 1.5, paragraphSpacing: 2.0 },
+    },
+    AAA: {
+      colorContrast: { normalText: 7.0, largeText: 4.5 },
+      nonTextContrast: 3.0,
+      textSpacing: { letterSpacing: 0.12, lineHeight: 1.5, paragraphSpacing: 2.0 },
+    },
+  },
+  '2.2': {
+    AA: {
+      colorContrast: { normalText: 4.5, largeText: 3.0 },
+      nonTextContrast: 3.0,
+      textSpacing: { letterSpacing: 0.12, lineHeight: 1.5, paragraphSpacing: 2.0 },
+      focusAppearance: { minSize: 2, minContrast: 3.0 },
+    },
+    AAA: {
+      colorContrast: { normalText: 7.0, largeText: 4.5 },
+      nonTextContrast: 3.0,
+      textSpacing: { letterSpacing: 0.12, lineHeight: 1.5, paragraphSpacing: 2.0 },
+      focusAppearance: { minSize: 2, minContrast: 4.5 },
+    },
+  },
+};
+
+const DEFAULT_SETTINGS: UserSettings = {
+  wcag: {
+    version: '2.1',
+    level: 'AA',
+  },
+  checks: {
+    colorContrast: true,
+    textSpacing: true,
+    lineHeight: true,
+    paragraphSpacing: true,
+    nonTextContrast: true,
+  },
+  display: {
+    showOverlays: true,
+    groupByElement: true,
+    showOnlyFailures: false,
+    overlayOpacity: 70,
+  },
+  cache: {
+    ttlDays: 7,
+  },
+};
+
 let selectedFrame: FrameNode | null = null;
 let currentIssues: AccessibilityIssue[] = [];
 let overlayFrame: FrameNode | null = null;
 let isPaused = false;
 let analysisProgress = 0;
 let totalElements = 0;
+let userSettings: UserSettings = DEFAULT_SETTINGS;
+
+// ============================================
+// SETTINGS MANAGEMENT
+// ============================================
+
+async function loadSettings(): Promise<UserSettings> {
+  try {
+    const settingsJson = await figma.clientStorage.getAsync(SETTINGS_KEY);
+    if (settingsJson) {
+      const saved = JSON.parse(settingsJson);
+      // Merge with defaults to handle new settings
+      return { ...DEFAULT_SETTINGS, ...saved };
+    }
+  } catch (error) {
+    console.error('Failed to load settings:', error);
+  }
+  return DEFAULT_SETTINGS;
+}
+
+async function saveSettings(settings: UserSettings): Promise<void> {
+  try {
+    await figma.clientStorage.setAsync(SETTINGS_KEY, JSON.stringify(settings));
+    userSettings = settings;
+    console.log('✓ Settings saved');
+  } catch (error) {
+    console.error('Failed to save settings:', error);
+  }
+}
+
+function getThresholds() {
+  const { version, level } = userSettings.wcag;
+  return WCAG_THRESHOLDS[version][level];
+}
+
+function getCacheDuration(): number {
+  return userSettings.cache.ttlDays * 24 * 60 * 60 * 1000;
+}
 
 // ============================================
 // CACHE FUNCTIONS
@@ -109,7 +244,7 @@ function isCacheValid(frame: FrameNode, cached: CachedAnalysis): boolean {
 }
 
 function isExpired(timestamp: number): boolean {
-  return (Date.now() - timestamp) > CACHE_DURATION;
+  return (Date.now() - timestamp) > getCacheDuration();
 }
 
 function clearFrameCache(frame: FrameNode): void {
@@ -129,6 +264,10 @@ function clearAllCaches(): void {
 
   figma.notify('✓ All caches cleared');
 }
+
+// ============================================
+// CHANGE DETECTION
+// ============================================
 
 function generateContentHash(frame: FrameNode): string {
   const fingerprint = {
@@ -189,6 +328,22 @@ function simpleHash(str: string): string {
   return Math.abs(hash).toString(36);
 }
 
+async function checkForChanges(frame: FrameNode): Promise<boolean> {
+  const currentHash = generateContentHash(frame);
+  const lastHash = lastFrameHashes.get(frame.id) || frame.getPluginData(LAST_HASH_KEY);
+  
+  if (lastHash && currentHash !== lastHash) {
+    // Frame has changed!
+    lastFrameHashes.set(frame.id, currentHash);
+    frame.setPluginData(LAST_HASH_KEY, currentHash);
+    return true;
+  }
+  
+  lastFrameHashes.set(frame.id, currentHash);
+  frame.setPluginData(LAST_HASH_KEY, currentHash);
+  return false;
+}
+
 function getCacheAge(timestamp: number): string {
   const ageMs = Date.now() - timestamp;
   const ageMinutes = Math.floor(ageMs / 60000);
@@ -202,35 +357,48 @@ function getCacheAge(timestamp: number): string {
 }
 
 // ============================================
-// SELECTION HANDLER - FIXED TO AUTO-LOAD
+// SELECTION HANDLER - WITH CHANGE DETECTION
 // ============================================
 
 figma.on('selectionchange', async () => {
   const selection = figma.currentPage.selection;
 
   if (selection.length === 0) {
-    figma.ui.postMessage({ type: 'selection-error', message: 'No frame selected' });
+    figma.ui.postMessage({ type: 'no-frame-selected' });
     selectedFrame = null;
   } else if (selection.length > 1) {
-    figma.ui.postMessage({ type: 'selection-error', message: 'Multiple frames selected. Please select only one frame.' });
+    figma.ui.postMessage({ type: 'no-frame-selected' });
     selectedFrame = null;
   } else if (selection[0].type === 'FRAME') {
     selectedFrame = selection[0] as FrameNode;
     
+    // Send frame selected message
+    figma.ui.postMessage({ 
+      type: 'frame-selected', 
+      frameName: selectedFrame.name,
+      layerCount: selectedFrame.children.length
+    });
+    
+    // Check for changes
+    const hasChanged = await checkForChanges(selectedFrame);
+    if (hasChanged) {
+      figma.ui.postMessage({
+        type: 'frame-changed',
+        frameId: selectedFrame.id,
+        frameName: selectedFrame.name
+      });
+    }
+    
     // Check for cached analysis
     const cached = getCachedAnalysis(selectedFrame);
     
-    if (cached) {
+    if (cached && !hasChanged) {
       // Has valid cache - auto-load results!
       console.log('✓ Auto-loading cached results for:', selectedFrame.name);
       
-      const groupedIssues = groupIssuesByElement(cached.results);
-      
-      // Send selection valid
-      figma.ui.postMessage({ 
-        type: 'selection-valid', 
-        frameName: selectedFrame.name 
-      });
+      const results = userSettings.display.showOnlyFailures 
+        ? cached.results.filter(r => r.severity === 'fail')
+        : cached.results;
       
       // Send cache info
       figma.ui.postMessage({
@@ -239,24 +407,17 @@ figma.on('selectionchange', async () => {
         hasChanges: false
       });
       
-      // AUTO-LOAD RESULTS (This is the fix!)
+      // AUTO-LOAD RESULTS
       figma.ui.postMessage({
         type: 'analysis-complete',
-        issues: groupedIssues,
+        results: results,
         totalIssues: cached.results.length,
         fromCache: true,
         cacheAge: getCacheAge(cached.timestamp)
       });
-      
-    } else {
-      // No cache - just show frame selected
-      figma.ui.postMessage({ 
-        type: 'selection-valid', 
-        frameName: selectedFrame.name 
-      });
     }
   } else {
-    figma.ui.postMessage({ type: 'selection-error', message: 'Please select a frame (not a single element)' });
+    figma.ui.postMessage({ type: 'no-frame-selected' });
     selectedFrame = null;
   }
 });
@@ -266,19 +427,52 @@ figma.on('selectionchange', async () => {
 // ============================================
 
 figma.ui.onmessage = async (msg) => {
-  if (msg.type === 'pause-analysis') {
-    isPaused = true;
-    figma.notify('⏸ Analysis paused');
-    figma.ui.postMessage({ type: 'analysis-paused' });
+  // Settings Management
+  if (msg.type === 'get-settings') {
+    const settings = await loadSettings();
+    figma.ui.postMessage({ 
+      type: 'settings-loaded',
+      settings 
+    });
+    return;
   }
 
-  if (msg.type === 'resume-analysis') {
-    isPaused = false;
-    figma.notify('▶ Analysis resumed');
-    figma.ui.postMessage({ type: 'analysis-resumed' });
+  if (msg.type === 'save-settings') {
+    await saveSettings(msg.settings);
+    userSettings = msg.settings;
+    figma.ui.postMessage({ type: 'settings-saved' });
+    return;
   }
 
-  if (msg.type === 'analyze') {
+  // Cache Management
+  if (msg.type === 'clear-cache') {
+    if (selectedFrame) {
+      clearFrameCache(selectedFrame);
+      figma.notify('✓ Cache cleared for this frame');
+      figma.ui.postMessage({ type: 'cache-cleared' });
+    }
+    return;
+  }
+
+  if (msg.type === 'clear-all-cache') {
+    clearAllCaches();
+    return;
+  }
+
+  if (msg.type === 'get-cache-info') {
+    if (selectedFrame) {
+      const cached = getCachedAnalysis(selectedFrame);
+      figma.ui.postMessage({
+        type: 'cache-info',
+        hasCached: !!cached,
+        age: cached ? getCacheAge(cached.timestamp) : null
+      });
+    }
+    return;
+  }
+
+  // Analysis
+  if (msg.type === 'analyze' || msg.type === 'analyze-frame') {
     try {
       console.log('Analysis started');
       isPaused = false;
@@ -295,16 +489,19 @@ figma.ui.onmessage = async (msg) => {
         const cached = getCachedAnalysis(selectedFrame);
         if (cached) {
           console.log('⚡ Using cached results');
-          const groupedIssues = groupIssuesByElement(cached.results);
+          const results = userSettings.display.showOnlyFailures 
+            ? cached.results.filter(r => r.severity === 'fail')
+            : cached.results;
+            
           figma.ui.postMessage({
             type: 'analysis-complete',
-            issues: groupedIssues,
+            results: results,
             totalIssues: cached.results.length,
             fromCache: true,
             cacheAge: getCacheAge(cached.timestamp)
           });
 
-          if (cached.results.length > 0 && msg.showOverlay) {
+          if (cached.results.length > 0 && msg.showOverlay !== false) {
             currentIssues = cached.results;
             await createOverlayFrame(selectedFrame, cached.results);
           }
@@ -315,7 +512,7 @@ figma.ui.onmessage = async (msg) => {
       }
 
       console.log('Running fresh analysis');
-      const checks = msg.checks;
+      const checks = msg.checks || userSettings.checks;
       currentIssues = [];
 
       clearOverlays();
@@ -329,16 +526,18 @@ figma.ui.onmessage = async (msg) => {
 
       setCachedAnalysis(selectedFrame, currentIssues);
 
-      const groupedIssues = groupIssuesByElement(currentIssues);
+      const results = userSettings.display.showOnlyFailures 
+        ? currentIssues.filter(r => r.severity === 'fail')
+        : currentIssues;
 
       figma.ui.postMessage({
         type: 'analysis-complete',
-        issues: groupedIssues,
+        results: results,
         totalIssues: currentIssues.length,
         fromCache: false
       });
 
-      if (currentIssues.length > 0 && msg.showOverlay) {
+      if (currentIssues.length > 0 && msg.showOverlay !== false) {
         await createOverlayFrame(selectedFrame, currentIssues);
       }
 
@@ -348,20 +547,24 @@ figma.ui.onmessage = async (msg) => {
       figma.ui.postMessage({ type: 'error', message: 'Analysis failed: ' + error });
       figma.notify('❌ Analysis failed. Check console for details.');
     }
+    return;
   }
 
   if (msg.type === 'apply-fix') {
     await applyFix(msg.issueIndex, msg.fix);
+    return;
   }
 
   if (msg.type === 'toggle-overlay') {
     if (overlayFrame) {
       overlayFrame.visible = msg.visible;
     }
+    return;
   }
 
   if (msg.type === 'clear-overlays') {
     clearOverlays();
+    return;
   }
 
   if (msg.type === 'jump-to-element') {
@@ -370,34 +573,54 @@ figma.ui.onmessage = async (msg) => {
       figma.currentPage.selection = [node as SceneNode];
       figma.viewport.scrollAndZoomIntoView([node as SceneNode]);
     }
+    return;
   }
 
-  if (msg.type === 'clear-cache') {
-    if (selectedFrame) {
-      clearFrameCache(selectedFrame);
-      figma.notify('✓ Cache cleared for this frame');
-      figma.ui.postMessage({ type: 'cache-cleared' });
+  if (msg.type === 'pause-analysis') {
+    isPaused = true;
+    figma.notify('⏸ Analysis paused');
+    figma.ui.postMessage({ type: 'analysis-paused' });
+    return;
+  }
+
+  if (msg.type === 'resume-analysis') {
+    isPaused = false;
+    figma.notify('▶ Analysis resumed');
+    figma.ui.postMessage({ type: 'analysis-resumed' });
+    return;
+  }
+
+  // History (placeholder - would need Supabase integration)
+  if (msg.type === 'get-all-analyses') {
+    // TODO: Implement Supabase query
+    figma.ui.postMessage({
+      type: 'all-analyses',
+      analyses: []
+    });
+    return;
+  }
+
+  if (msg.type === 'get-unresolved-changes') {
+    // TODO: Implement Supabase query
+    figma.ui.postMessage({
+      type: 'unresolved-changes',
+      changes: []
+    });
+    return;
+  }
+
+  if (msg.type === 'select-frame') {
+    const node = figma.getNodeById(msg.frameId);
+    if (node && node.type === 'FRAME') {
+      figma.currentPage.selection = [node];
+      figma.viewport.scrollAndZoomIntoView([node]);
     }
-  }
-
-  if (msg.type === 'clear-all-caches') {
-    clearAllCaches();
-  }
-
-  if (msg.type === 'get-cache-info') {
-    if (selectedFrame) {
-      const cached = getCachedAnalysis(selectedFrame);
-      figma.ui.postMessage({
-        type: 'cache-info',
-        hasCached: !!cached,
-        age: cached ? getCacheAge(cached.timestamp) : null
-      });
-    }
+    return;
   }
 };
 
 // ============================================
-// ANALYSIS FUNCTIONS
+// ANALYSIS FUNCTIONS WITH WCAG THRESHOLDS
 // ============================================
 
 function countElements(node: SceneNode): number {
@@ -412,6 +635,7 @@ function countElements(node: SceneNode): number {
 
 async function analyzeFrame(frame: FrameNode, checks: any) {
   let processedElements = 0;
+  const thresholds = getThresholds();
 
   async function checkNode(node: SceneNode) {
     if (isPaused) {
@@ -439,21 +663,22 @@ async function analyzeFrame(frame: FrameNode, checks: any) {
     
     if (node.type === 'TEXT') {
       if (checks.colorContrast) {
-        await checkTextContrast(node);
+        await checkTextContrast(node, thresholds.colorContrast);
       }
-      if (checks.textSpacing) {
-        checkTextSpacing(node);
+      if (checks.textSpacing && thresholds.textSpacing) {
+        checkTextSpacing(node, thresholds.textSpacing);
       }
-      if (checks.lineHeight) {
-        checkLineHeight(node);
+      if (checks.lineHeight && thresholds.textSpacing) {
+        checkLineHeight(node, thresholds.textSpacing);
       }
-      if (checks.paragraphSpacing) {
-        checkParagraphSpacing(node);
+      if (checks.paragraphSpacing && thresholds.textSpacing) {
+        checkParagraphSpacing(node, thresholds.textSpacing);
       }
     }
 
-    if (checks.nonTextContrast && (node.type === 'RECTANGLE' || node.type === 'ELLIPSE' || node.type === 'VECTOR')) {
-      checkNonTextContrast(node);
+    if (checks.nonTextContrast && thresholds.nonTextContrast && 
+        (node.type === 'RECTANGLE' || node.type === 'ELLIPSE' || node.type === 'VECTOR')) {
+      checkNonTextContrast(node, thresholds.nonTextContrast);
     }
 
     if ('children' in node) {
@@ -466,7 +691,7 @@ async function analyzeFrame(frame: FrameNode, checks: any) {
   await checkNode(frame);
 }
 
-async function checkTextContrast(textNode: TextNode) {
+async function checkTextContrast(textNode: TextNode, thresholds: any) {
   try {
     const fontName = textNode.fontName;
     if (fontName === figma.mixed) {
@@ -510,8 +735,7 @@ async function checkTextContrast(textNode: TextNode) {
     }
     
     const isLargeText = fontSize >= 18 || (fontSize >= 14 && fontWeight >= 700);
-    const aaRequired = isLargeText ? 3.0 : 4.5;
-    const aaaRequired = isLargeText ? 4.5 : 7.0;
+    const aaRequired = isLargeText ? thresholds.largeText : thresholds.normalText;
     const bounds = textNode.absoluteBoundingBox;
 
     if (ratio < aaRequired) {
@@ -521,24 +745,10 @@ async function checkTextContrast(textNode: TextNode) {
         elementName: textNode.name,
         issueType: 'Color Contrast',
         severity: 'fail',
-        wcagLevel: 'AA',
+        wcagLevel: userSettings.wcag.level,
         currentValue: `${ratio.toFixed(2)}:1`,
         requiredValue: `${aaRequired}:1`,
-        suggestion: `Change text color to ${rgbToHex(suggestedColor)} to meet AA standards`,
-        suggestedFix: { type: 'textColor', value: suggestedColor },
-        bounds: bounds ? { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height } : undefined
-      });
-    } else if (ratio < aaaRequired) {
-      const suggestedColor = calculateBetterColor(textColor, bgColor, aaaRequired);
-      currentIssues.push({
-        elementId: textNode.id,
-        elementName: textNode.name,
-        issueType: 'Color Contrast',
-        severity: 'warning',
-        wcagLevel: 'AAA',
-        currentValue: `${ratio.toFixed(2)}:1`,
-        requiredValue: `${aaaRequired}:1`,
-        suggestion: `Change text color to ${rgbToHex(suggestedColor)} for AAA compliance`,
+        suggestion: `Change text color to ${rgbToHex(suggestedColor)} to meet ${userSettings.wcag.version} ${userSettings.wcag.level} standards`,
         suggestedFix: { type: 'textColor', value: suggestedColor },
         bounds: bounds ? { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height } : undefined
       });
@@ -548,7 +758,7 @@ async function checkTextContrast(textNode: TextNode) {
   }
 }
 
-function checkTextSpacing(textNode: TextNode) {
+function checkTextSpacing(textNode: TextNode, thresholds: any) {
   try {
     const fontSize = textNode.fontSize as number;
     const letterSpacing = textNode.letterSpacing as LetterSpacing;
@@ -560,7 +770,7 @@ function checkTextSpacing(textNode: TextNode) {
       currentSpacing = (letterSpacing.value / 100) * fontSize;
     }
 
-    const requiredSpacing = fontSize * 0.12;
+    const requiredSpacing = fontSize * thresholds.letterSpacing;
     const bounds = textNode.absoluteBoundingBox;
 
     if (currentSpacing < requiredSpacing) {
@@ -569,9 +779,9 @@ function checkTextSpacing(textNode: TextNode) {
         elementName: textNode.name,
         issueType: 'Text Spacing',
         severity: 'fail',
-        wcagLevel: 'AA',
+        wcagLevel: userSettings.wcag.level,
         currentValue: `${currentSpacing.toFixed(1)}px`,
-        requiredValue: `${requiredSpacing.toFixed(1)}px (0.12em)`,
+        requiredValue: `${requiredSpacing.toFixed(1)}px (${thresholds.letterSpacing}em)`,
         suggestion: `Increase letter spacing to ${requiredSpacing.toFixed(1)}px`,
         suggestedFix: { type: 'letterSpacing', value: requiredSpacing },
         bounds: bounds ? { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height } : undefined
@@ -582,7 +792,7 @@ function checkTextSpacing(textNode: TextNode) {
   }
 }
 
-function checkLineHeight(textNode: TextNode) {
+function checkLineHeight(textNode: TextNode, thresholds: any) {
   try {
     const fontSize = textNode.fontSize as number;
     const lineHeight = textNode.lineHeight as LineHeight;
@@ -593,10 +803,10 @@ function checkLineHeight(textNode: TextNode) {
     } else if (lineHeight.unit === 'PERCENT') {
       currentLineHeight = (lineHeight.value / 100) * fontSize;
     } else {
-      currentLineHeight = fontSize * 1.5;
+      currentLineHeight = fontSize * thresholds.lineHeight;
     }
 
-    const requiredLineHeight = fontSize * 1.5;
+    const requiredLineHeight = fontSize * thresholds.lineHeight;
     const bounds = textNode.absoluteBoundingBox;
 
     if (currentLineHeight < requiredLineHeight) {
@@ -605,9 +815,9 @@ function checkLineHeight(textNode: TextNode) {
         elementName: textNode.name,
         issueType: 'Line Height',
         severity: 'fail',
-        wcagLevel: 'AA',
+        wcagLevel: userSettings.wcag.level,
         currentValue: `${currentLineHeight.toFixed(1)}px`,
-        requiredValue: `${requiredLineHeight.toFixed(1)}px (1.5x)`,
+        requiredValue: `${requiredLineHeight.toFixed(1)}px (${thresholds.lineHeight}x)`,
         suggestion: `Increase line height to ${requiredLineHeight.toFixed(1)}px`,
         suggestedFix: { type: 'lineHeight', value: requiredLineHeight },
         bounds: bounds ? { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height } : undefined
@@ -618,11 +828,11 @@ function checkLineHeight(textNode: TextNode) {
   }
 }
 
-function checkParagraphSpacing(textNode: TextNode) {
+function checkParagraphSpacing(textNode: TextNode, thresholds: any) {
   try {
     const fontSize = textNode.fontSize as number;
     const paragraphSpacing = textNode.paragraphSpacing;
-    const requiredSpacing = fontSize * 2.0;
+    const requiredSpacing = fontSize * thresholds.paragraphSpacing;
     const bounds = textNode.absoluteBoundingBox;
 
     if (paragraphSpacing < requiredSpacing) {
@@ -631,9 +841,9 @@ function checkParagraphSpacing(textNode: TextNode) {
         elementName: textNode.name,
         issueType: 'Paragraph Spacing',
         severity: 'fail',
-        wcagLevel: 'AA',
+        wcagLevel: userSettings.wcag.level,
         currentValue: `${paragraphSpacing.toFixed(1)}px`,
-        requiredValue: `${requiredSpacing.toFixed(1)}px (2.0x)`,
+        requiredValue: `${requiredSpacing.toFixed(1)}px (${thresholds.paragraphSpacing}x)`,
         suggestion: `Increase paragraph spacing to ${requiredSpacing.toFixed(1)}px`,
         suggestedFix: { type: 'paragraphSpacing', value: requiredSpacing },
         bounds: bounds ? { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height } : undefined
@@ -644,7 +854,7 @@ function checkParagraphSpacing(textNode: TextNode) {
   }
 }
 
-function checkNonTextContrast(node: SceneNode) {
+function checkNonTextContrast(node: SceneNode, threshold: number) {
   const fills = 'fills' in node ? node.fills : [];
   if (Array.isArray(fills) && fills.length > 0) {
     const fill = fills[0];
@@ -653,15 +863,15 @@ function checkNonTextContrast(node: SceneNode) {
       if (bgColor) {
         const ratio = getContrastRatio(fill.color, bgColor);
         const bounds = 'absoluteBoundingBox' in node ? node.absoluteBoundingBox : null;
-        if (ratio < 3.0) {
+        if (ratio < threshold) {
           currentIssues.push({
             elementId: node.id,
             elementName: node.name,
             issueType: 'Non-text Contrast',
             severity: 'fail',
-            wcagLevel: 'AA',
+            wcagLevel: userSettings.wcag.level,
             currentValue: `${ratio.toFixed(2)}:1`,
-            requiredValue: `3.0:1`,
+            requiredValue: `${threshold}:1`,
             suggestion: `Increase contrast between element and background`,
             suggestedFix: { type: 'fillColor', value: fill.color },
             bounds: bounds ? { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height } : undefined
@@ -690,7 +900,7 @@ async function createOverlayFrame(targetFrame: FrameNode, issues: AccessibilityI
   overlayFrame.y = frameBounds.y;
   overlayFrame.fills = [];
   overlayFrame.locked = true;
-  overlayFrame.opacity = 1;
+  overlayFrame.opacity = userSettings.display.overlayOpacity / 100;
 
   if (targetFrame.parent && 'insertChild' in targetFrame.parent) {
     const targetIndex = targetFrame.parent.children.indexOf(targetFrame);
@@ -855,24 +1065,6 @@ function rgbToHex(color: RGB): string {
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
 
-function groupIssuesByElement(issues: AccessibilityIssue[]) {
-  const grouped: { [key: string]: AccessibilityIssue[] } = {};
-  
-  issues.forEach((issue, index) => {
-    const key = `${issue.elementName}_${issue.elementId}`;
-    if (!grouped[key]) {
-      grouped[key] = [];
-    }
-    grouped[key].push({ ...issue, index } as any);
-  });
-  
-  return Object.entries(grouped).map(([key, issues]) => ({
-    elementName: issues[0].elementName,
-    elementId: issues[0].elementId,
-    issues: issues
-  }));
-}
-
 async function applyFix(issueIndex: number, fix: any) {
   const issue = currentIssues[issueIndex];
   const node = figma.getNodeById(issue.elementId);
@@ -898,7 +1090,21 @@ async function applyFix(issueIndex: number, fix: any) {
     }
 
     figma.ui.postMessage({ type: 'fix-applied', message: 'Fix applied successfully!' });
+    figma.notify('✓ Fix applied!');
   } catch (error) {
     figma.ui.postMessage({ type: 'error', message: 'Failed to apply fix' });
+    figma.notify('❌ Failed to apply fix');
   }
 }
+
+// ============================================
+// INITIALIZATION
+// ============================================
+
+async function init() {
+  userSettings = await loadSettings();
+  console.log('A11y Audit Pro initialized');
+  console.log('Current WCAG:', userSettings.wcag.version, userSettings.wcag.level);
+}
+
+init();

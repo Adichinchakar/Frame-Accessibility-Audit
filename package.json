@@ -1,9 +1,10 @@
 {
-  "name": "frame-accessibility-audit",
+  "name": "a11y-audit-pro",
   "version": "1.0.0",
-  "description": "WCAG 2.2 Accessibility Checker for Figma Frames",
+  "description": "A11y Audit Pro - WCAG 2.0/2.1/2.2 Accessibility Checker for Figma",
   "scripts": {
     "build": "tsc && npm run copy-ui",
+    "build:enhanced": "tsc code-enhanced.ts --outDir dist --target ES6 --module ESNext && npm run copy-ui",
     "copy-ui": "node -e \"require('fs').copyFileSync('ui.html', 'dist/ui.html')\"",
     "watch": "tsc --watch"
   },

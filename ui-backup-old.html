@@ -1,0 +1,1755 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #667eea;
+      --primary-dark: #5568d3;
+      --secondary: #764ba2;
+      --success: #10b981;
+      --error: #ef4444;
+      --warning: #f59e0b;
+      --bg-primary: #ffffff;
+      --bg-secondary: #f9fafb;
+      --text-primary: #000000;
+      --text-secondary: #666666;
+      --border: #e5e5e5;
+      --shadow: rgba(0, 0, 0, 0.1);
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 11px;
+      line-height: 16px;
+      overflow-x: hidden;
+    }
+
+    .container {
+      padding: 12px;
+    }
+
+    .header {
+      padding: 16px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      color: white;
+      margin: -12px -12px 12px -12px;
+    }
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+
+    .header-icon {
+      font-size: 20px;
+    }
+
+    h1 {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+    }
+
+    .subtitle {
+      font-size: 10px;
+      opacity: 0.9;
+      margin-left: 30px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 16px;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 0;
+    }
+
+    .tab {
+      padding: 10px 16px;
+      background: none;
+      border: none;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      position: relative;
+      bottom: -2px;
+    }
+
+    .tab:hover {
+      color: var(--text-primary);
+      background: var(--bg-secondary);
+    }
+
+    .tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+      background: transparent;
+    }
+
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.3s;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .section {
+      margin-bottom: 20px;
+      padding: 12px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .section-title {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      letter-spacing: 0.8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .section-icon {
+      font-size: 12px;
+    }
+
+    .checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--bg-primary);
+    }
+
+    .checkbox-item:hover {
+      background: #f0f0f0;
+      transform: translateX(2px);
+    }
+
+    .checkbox-item input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: var(--primary);
+    }
+
+    .checkbox-item label {
+      cursor: pointer;
+      flex: 1;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .selection-status {
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 11px;
+      margin-bottom: 16px;
+      border: 2px solid;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 500;
+      animation: slideIn 0.3s;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .status-error {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #991b1b;
+    }
+
+    .status-valid {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+      color: #166534;
+    }
+
+    .status-none {
+      background: var(--bg-secondary);
+      border-color: var(--border);
+      color: var(--text-secondary);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-primary:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn-primary:disabled {
+      background: #d1d5db;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .btn-secondary {
+      background: white;
+      color: var(--primary);
+      border: 2px solid var(--primary);
+    }
+
+    .btn-secondary:hover {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-warning {
+      background: var(--warning);
+      color: white;
+    }
+
+    .btn-error {
+      background: var(--error);
+      color: white;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .btn-small {
+      padding: 8px 12px;
+      font-size: 10px;
+    }
+
+    .input-group {
+      margin-bottom: 16px;
+    }
+
+    .input-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .input-badge {
+      padding: 2px 6px;
+      background: var(--success);
+      color: white;
+      border-radius: 4px;
+      font-size: 9px;
+      font-weight: 700;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    .input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      font-size: 11px;
+      font-family: 'SF Mono', Monaco, monospace;
+      transition: all 0.2s;
+      background: var(--bg-primary);
+    }
+
+    .input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    }
+
+    .input-icon {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 14px;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    .input-icon:hover {
+      color: var(--primary);
+    }
+
+    .toggle-group {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      background: var(--bg-primary);
+      border-radius: 6px;
+      margin-bottom: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .toggle-label {
+      font-size: 11px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toggle {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      background: #d1d5db;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .toggle.active {
+      background: var(--primary);
+    }
+
+    .toggle::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: left 0.3s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .toggle.active::after {
+      left: 22px;
+    }
+
+    .progress-container {
+      display: none;
+      margin-top: 16px;
+      padding: 16px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      border: 2px solid var(--primary);
+    }
+
+    .progress-container.show {
+      display: block;
+      animation: slideIn 0.3s;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .progress-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .progress-stats {
+      font-size: 10px;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #e5e7eb;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      border-radius: 4px;
+      transition: width 0.3s ease;
+      position: relative;
+    }
+
+    .progress-fill::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    .progress-controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid var(--primary);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 12px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .results {
+      margin-top: 16px;
+      display: none;
+    }
+
+    .results.show {
+      display: block;
+      animation: fadeIn 0.5s;
+    }
+
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding: 12px;
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      border-radius: 8px;
+      border: 2px solid #bae6fd;
+    }
+
+    .results-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0369a1;
+    }
+
+    .results-count {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 12px;
+      background: var(--primary);
+      color: white;
+      border-radius: 16px;
+    }
+
+    .overlay-controls {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .element-group {
+      margin-bottom: 16px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      transition: all 0.2s;
+      background: var(--bg-primary);
+    }
+
+    .element-group:hover {
+      box-shadow: 0 4px 16px var(--shadow);
+      transform: translateY(-2px);
+    }
+
+    .element-header {
+      padding: 12px;
+      background: var(--bg-secondary);
+      font-weight: 700;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+
+    .element-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .element-icon {
+      width: 24px;
+      height: 24px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: white;
+    }
+
+    .jump-btn {
+      padding: 6px 12px;
+      background: white;
+      border: 2px solid var(--primary);
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--primary);
+      text-transform: uppercase;
+    }
+
+    .jump-btn:hover {
+      background: var(--primary);
+      color: white;
+      transform: translateX(2px);
+    }
+
+    .issue-item {
+      padding: 12px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-primary);
+    }
+
+    .issue-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .issue-type {
+      font-weight: 700;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-fail {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .badge-warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .badge-aa {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .badge-aaa {
+      background: #ddd6fe;
+      color: #5b21b6;
+    }
+
+    .badge-changed {
+      background: #fef3c7;
+      color: #92400e;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .history-card {
+      padding: 12px;
+      background: var(--bg-primary);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .history-card:hover {
+      box-shadow: 0 4px 12px var(--shadow);
+      transform: translateY(-2px);
+      border-color: var(--primary);
+    }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .history-frame-name {
+      font-weight: 700;
+      font-size: 11px;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .history-date {
+      font-size: 10px;
+      color: var(--text-secondary);
+    }
+
+    .history-stats {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .history-stat {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      padding: 4px 8px;
+      background: var(--bg-secondary);
+      border-radius: 4px;
+    }
+
+    .stat-count {
+      font-weight: 700;
+    }
+
+    .change-indicator {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 10px;
+      height: 10px;
+      background: #f59e0b;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    .issue-values {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .value-box {
+      padding: 8px;
+      background: var(--bg-secondary);
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+
+    .value-label {
+      color: var(--text-secondary);
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    .value-text {
+      font-weight: 700;
+      color: var(--text-primary);
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 11px;
+    }
+
+    .suggestion-box {
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      border: 2px solid #bae6fd;
+      border-radius: 8px;
+      padding: 10px;
+      margin-top: 10px;
+    }
+
+    .suggestion-title {
+      font-size: 10px;
+      font-weight: 700;
+      color: #0369a1;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .suggestion-text {
+      font-size: 11px;
+      color: #075985;
+      margin-bottom: 10px;
+      line-height: 1.6;
+    }
+
+    .btn-apply {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      padding: 8px 12px;
+      font-size: 10px;
+      font-weight: 700;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+      text-transform: uppercase;
+    }
+
+    .btn-apply:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .success-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--success);
+    }
+
+    .success-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+      animation: scaleIn 0.5s;
+    }
+
+    @keyframes scaleIn {
+      0% { transform: scale(0); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+
+    .success-title {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .success-desc {
+      font-size: 11px;
+      color: #059669;
+    }
+
+    .help-text {
+      font-size: 10px;
+      color: var(--text-secondary);
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+
+    .help-box {
+      margin-top: 16px;
+      padding: 12px;
+      background: #fef3c7;
+      border-radius: 8px;
+      border: 2px solid #fbbf24;
+    }
+
+    .help-box-title {
+      font-size: 10px;
+      font-weight: 700;
+      color: #92400e;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .help-box ol {
+      font-size: 10px;
+      color: #92400e;
+      padding-left: 20px;
+      line-height: 1.8;
+    }
+
+    .help-box strong {
+      font-weight: 700;
+    }
+
+    .ai-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      color: white;
+      border-radius: 4px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .notification {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      z-index: 10000;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      animation: slideInRight 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(100px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .notification-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .notification-error {
+      background: var(--error);
+      color: white;
+    }
+
+    .notification-warning {
+      background: var(--warning);
+      color: white;
+    }
+
+    .api-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--bg-secondary);
+      border-radius: 6px;
+      margin-bottom: 12px;
+      font-size: 10px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #d1d5db;
+    }
+
+    .status-dot.active {
+      background: var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .tooltip {
+      position: relative;
+      display: inline-block;
+      cursor: help;
+    }
+
+    .tooltip:hover::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 6px 10px;
+      background: #1f2937;
+      color: white;
+      font-size: 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+      z-index: 1000;
+      margin-bottom: 6px;
+    }
+
+    .cache-status {
+      padding: 10px 12px;
+      background: #eff6ff;
+      border: 2px solid #bfdbfe;
+      border-radius: 8px;
+      font-size: 11px;
+      margin-bottom: 12px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      animation: slideIn 0.3s;
+    }
+
+    .cache-status.show {
+      display: flex;
+    }
+
+    .cache-icon {
+      font-size: 14px;
+    }
+
+    .cache-status span {
+      flex: 1;
+      color: #1e40af;
+      font-weight: 600;
+    }
+
+    .btn-link {
+      background: none;
+      border: none;
+      color: var(--primary);
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 0;
+      transition: color 0.2s;
+    }
+
+    .btn-link:hover {
+      color: var(--primary-dark);
+    }
+
+    .cache-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1e40af;
+      border-radius: 4px;
+      font-size: 9px;
+      font-weight: 700;
+      margin-left: 4px;
+    }
+
+    .results-header.cached {
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      border-color: #bfdbfe;
+    }
+
+    .btn-group-actions {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-content">
+      <span class="header-icon">♿</span>
+      <h1>Accessibility Audit Pro</h1>
+    </div>
+    <p class="subtitle">WCAG 2.2 Compliance Analysis</p>
+  </div>
+
+  <div class="container">
+    <div class="tabs">
+      <button class="tab active" data-tab="analyze">
+        <span>🔍</span> Analyze
+      </button>
+      <button class="tab" data-tab="history">
+        <span>📚</span> History
+      </button>
+    </div>
+
+    <!-- Analyze Tab -->
+    <div class="tab-content active" id="analyze-tab">
+      <div class="selection-status status-none" id="selectionStatus">
+        <span style="font-size: 16px;">📋</span>
+        <span>Select a frame to begin analysis</span>
+      </div>
+
+      <div class="section">
+        <div class="section-title">
+          <span class="section-icon">✓</span>
+          Accessibility Checks
+        </div>
+        <div class="checkbox-group">
+          <div class="checkbox-item">
+            <input type="checkbox" id="checkContrast" checked>
+            <label for="checkContrast">Color Contrast (AA/AAA)</label>
+          </div>
+          <div class="checkbox-item">
+            <input type="checkbox" id="checkTextSpacing" checked>
+            <label for="checkTextSpacing">Text Spacing (1.4.12)</label>
+          </div>
+          <div class="checkbox-item">
+            <input type="checkbox" id="checkLineHeight" checked>
+            <label for="checkLineHeight">Line Height (1.4.12)</label>
+          </div>
+          <div class="checkbox-item">
+            <input type="checkbox" id="checkParagraphSpacing" checked>
+            <label for="checkParagraphSpacing">Paragraph Spacing (1.4.12)</label>
+          </div>
+          <div class="checkbox-item">
+            <input type="checkbox" id="checkNonText" checked>
+            <label for="checkNonText">Non-text Contrast (1.4.11)</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">
+          <span class="section-icon">👁️</span>
+          Visualization
+        </div>
+        <div class="toggle-group">
+          <span class="toggle-label">
+            <span>Show Visual Overlay</span>
+            <span class="tooltip" data-tooltip="Highlights issues on your frame">ⓘ</span>
+          </span>
+          <div class="toggle active" id="overlayToggle"></div>
+        </div>
+      </div>
+
+      <div class="cache-status" id="cacheStatus">
+        <span class="cache-icon">💾</span>
+        <span id="cacheText">Cached results available</span>
+        <button class="btn-link" id="reanalyzeBtn">Re-analyze</button>
+      </div>
+
+      <div class="btn-group-actions">
+        <button class="btn btn-primary" id="analyzeBtn" disabled style="flex: 1;">
+          <span>▶</span>
+          <span>Start Analysis</span>
+        </button>
+        <button class="btn btn-secondary btn-small" id="clearCacheBtn" disabled title="Clear cache for this frame">
+          🗑️
+        </button>
+      </div>
+
+      <div class="progress-container" id="progressContainer">
+        <div class="progress-header">
+          <span class="progress-title">⏳ Analyzing...</span>
+          <span class="progress-stats" id="progressStats">0%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        </div>
+        <div class="progress-stats" id="elementStats" style="font-size: 10px; color: #666; text-align: center; margin-bottom: 12px;">
+          Processing elements...
+        </div>
+        <div class="progress-controls">
+          <button class="btn btn-warning btn-small" id="pauseBtn" style="flex: 1;">
+            <span>⏸</span> Pause
+          </button>
+          <button class="btn btn-error btn-small" id="cancelBtn" style="flex: 1;">
+            <span>✕</span> Cancel
+          </button>
+        </div>
+      </div>
+
+      <div class="results" id="results">
+        <div class="results-header">
+          <div class="results-title">📊 Issues Found</div>
+          <div class="results-count" id="issueCount">0</div>
+        </div>
+
+        <div class="overlay-controls" id="overlayControls" style="display: none;">
+          <button class="btn btn-secondary btn-small" id="toggleOverlayBtn" style="flex: 1;">
+            👁️ Toggle Overlay
+          </button>
+          <button class="btn btn-secondary btn-small" id="clearOverlayBtn" style="flex: 1;">
+            🗑️ Clear Overlay
+          </button>
+        </div>
+
+        <div id="issuesList"></div>
+      </div>
+    </div>
+
+    <!-- History Tab -->
+    <div class="tab-content" id="history-tab">
+      <div class="section">
+        <div class="section-title">
+          <span class="section-icon">📜</span>
+          Analysis History
+        </div>
+        <div id="historyStatus" style="padding: 20px; text-align: center; color: var(--text-secondary); font-size: 11px;">
+          Loading history...
+        </div>
+        <div id="historyList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+      </div>
+
+      <div class="section" id="frameHistorySection" style="display: none;">
+        <div class="section-title">
+          <span class="section-icon">🔄</span>
+          Selected Frame History
+        </div>
+        <div id="frameHistoryList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+      </div>
+
+      <div class="section" id="changesSection" style="display: none;">
+        <div class="section-title">
+          <span class="section-icon">⚠️</span>
+          Frames with Changes
+        </div>
+        <div id="changesList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    console.log('🚀 Accessibility Audit Pro - UI Loaded');
+
+    // Elements
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const selectionStatus = document.getElementById('selectionStatus');
+    const results = document.getElementById('results');
+    const issuesList = document.getElementById('issuesList');
+    const issueCount = document.getElementById('issueCount');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressFill = document.getElementById('progressFill');
+    const progressStats = document.getElementById('progressStats');
+    const elementStats = document.getElementById('elementStats');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const overlayToggle = document.getElementById('overlayToggle');
+    const toggleOverlayBtn = document.getElementById('toggleOverlayBtn');
+    const clearOverlayBtn = document.getElementById('clearOverlayBtn');
+    const overlayControls = document.getElementById('overlayControls');
+    const cacheStatus = document.getElementById('cacheStatus');
+    const cacheText = document.getElementById('cacheText');
+    const reanalyzeBtn = document.getElementById('reanalyzeBtn');
+    const clearCacheBtn = document.getElementById('clearCacheBtn');
+
+    let overlayVisible = true;
+    let showOverlay = true;
+    let isAnalyzing = false;
+    let isPaused = false;
+
+    // Notifications
+    function showNotification(message, type = 'success') {
+      const notification = document.createElement('div');
+      notification.className = `notification notification-${type}`;
+      notification.innerHTML = `<span>${getIcon(type)}</span><span>${message}</span>`;
+      document.body.appendChild(notification);
+      setTimeout(() => notification.remove(), 3000);
+    }
+
+    function getIcon(type) {
+      const icons = {
+        success: '✓',
+        error: '✕',
+        warning: '⚠'
+      };
+      return icons[type] || '•';
+    }
+
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab + '-tab').classList.add('active');
+
+        if (tab.dataset.tab === 'history') {
+          loadHistory();
+        }
+      });
+    });
+
+    // History management
+    let currentHistory = [];
+    let unresolvedChanges = [];
+
+    function loadHistory() {
+      parent.postMessage({
+        pluginMessage: { type: 'get-all-analyses', limit: 50 }
+      }, '*');
+    }
+
+    function displayHistory(analyses) {
+      const historyList = document.getElementById('historyList');
+      const historyStatus = document.getElementById('historyStatus');
+
+      if (!analyses || analyses.length === 0) {
+        historyStatus.textContent = 'No analysis history yet. Analyze a frame to get started!';
+        historyList.innerHTML = '';
+        return;
+      }
+
+      historyStatus.style.display = 'none';
+      historyList.innerHTML = '';
+
+      analyses.forEach(analysis => {
+        const card = document.createElement('div');
+        card.className = 'history-card';
+        card.style.position = 'relative';
+
+        const hasChanges = unresolvedChanges.some(change => change.frame_id === analysis.frame_id);
+
+        const date = new Date(analysis.analyzed_at);
+        const timeAgo = getTimeAgo(date);
+
+        card.innerHTML = `
+          ${hasChanges ? '<div class="change-indicator" title="Frame has changed"></div>' : ''}
+          <div class="history-header">
+            <div>
+              <div class="history-frame-name">${analysis.frame_name}</div>
+              <div class="history-date">${timeAgo}</div>
+            </div>
+            ${hasChanges ? '<span class="badge badge-changed">Changed</span>' : ''}
+          </div>
+          <div class="history-stats">
+            <div class="history-stat">
+              <span>📊</span>
+              <span class="stat-count">${analysis.total_issues}</span>
+              <span>issues</span>
+            </div>
+            <div class="history-stat">
+              <span>❌</span>
+              <span class="stat-count">${analysis.fail_count}</span>
+              <span>fails</span>
+            </div>
+            <div class="history-stat">
+              <span>⚠️</span>
+              <span class="stat-count">${analysis.warning_count}</span>
+              <span>warnings</span>
+            </div>
+          </div>
+        `;
+
+        card.addEventListener('click', () => {
+          parent.postMessage({
+            pluginMessage: { type: 'load-analysis-by-id', frameId: analysis.frame_id }
+          }, '*');
+          document.querySelector('[data-tab="analyze"]').click();
+        });
+
+        historyList.appendChild(card);
+      });
+    }
+
+    function displayFrameHistory(history) {
+      const frameHistorySection = document.getElementById('frameHistorySection');
+      const frameHistoryList = document.getElementById('frameHistoryList');
+
+      if (!history || history.length === 0) {
+        frameHistorySection.style.display = 'none';
+        return;
+      }
+
+      frameHistorySection.style.display = 'block';
+      frameHistoryList.innerHTML = '';
+
+      history.forEach((analysis, index) => {
+        const card = document.createElement('div');
+        card.className = 'history-card';
+
+        const date = new Date(analysis.analyzed_at);
+        const timeAgo = getTimeAgo(date);
+
+        card.innerHTML = `
+          <div class="history-header">
+            <div>
+              <div class="history-frame-name">Version ${history.length - index}</div>
+              <div class="history-date">${timeAgo}</div>
+            </div>
+          </div>
+          <div class="history-stats">
+            <div class="history-stat">
+              <span>📊</span>
+              <span class="stat-count">${analysis.total_issues}</span>
+              <span>issues</span>
+            </div>
+            <div class="history-stat">
+              <span>❌</span>
+              <span class="stat-count">${analysis.fail_count}</span>
+              <span>fails</span>
+            </div>
+          </div>
+        `;
+
+        frameHistoryList.appendChild(card);
+      });
+    }
+
+    function displayUnresolvedChanges(changes) {
+      unresolvedChanges = changes;
+
+      const changesSection = document.getElementById('changesSection');
+      const changesList = document.getElementById('changesList');
+
+      if (!changes || changes.length === 0) {
+        changesSection.style.display = 'none';
+        return;
+      }
+
+      changesSection.style.display = 'block';
+      changesList.innerHTML = '';
+
+      const uniqueFrames = [...new Set(changes.map(c => c.frame_id))];
+
+      uniqueFrames.forEach(frameId => {
+        const frameChanges = changes.filter(c => c.frame_id === frameId);
+        const latestChange = frameChanges[0];
+
+        const card = document.createElement('div');
+        card.className = 'history-card';
+        card.style.borderColor = '#f59e0b';
+
+        const date = new Date(latestChange.change_detected_at);
+        const timeAgo = getTimeAgo(date);
+
+        card.innerHTML = `
+          <div class="history-header">
+            <div>
+              <div class="history-frame-name">Frame ID: ${frameId}</div>
+              <div class="history-date">Changed ${timeAgo}</div>
+            </div>
+            <span class="badge badge-changed">⚠ Re-analyze</span>
+          </div>
+        `;
+
+        card.addEventListener('click', () => {
+          parent.postMessage({
+            pluginMessage: { type: 'load-analysis-by-id', frameId: frameId }
+          }, '*');
+          document.querySelector('[data-tab="analyze"]').click();
+        });
+
+        changesList.appendChild(card);
+      });
+    }
+
+    function getTimeAgo(date) {
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMins / 60);
+      const diffDays = Math.floor(diffHours / 24);
+
+      if (diffDays > 0) return `${diffDays}d ago`;
+      if (diffHours > 0) return `${diffHours}h ago`;
+      if (diffMins > 0) return `${diffMins}m ago`;
+      return 'just now';
+    }
+
+    // Toggle handlers
+    overlayToggle.addEventListener('click', () => {
+      showOverlay = !showOverlay;
+      overlayToggle.classList.toggle('active');
+    });
+
+    // Analyze button
+    analyzeBtn.addEventListener('click', () => {
+      if (isAnalyzing) return;
+
+      const checks = {
+        colorContrast: document.getElementById('checkContrast').checked,
+        textSpacing: document.getElementById('checkTextSpacing').checked,
+        lineHeight: document.getElementById('checkLineHeight').checked,
+        paragraphSpacing: document.getElementById('checkParagraphSpacing').checked,
+        nonTextContrast: document.getElementById('checkNonText').checked
+      };
+
+      isAnalyzing = true;
+      isPaused = false;
+      analyzeBtn.disabled = true;
+      analyzeBtn.innerHTML = '<span>⏳</span><span>Analyzing...</span>';
+
+      progressContainer.classList.add('show');
+      results.classList.remove('show');
+
+      parent.postMessage({
+        pluginMessage: {
+          type: 'analyze',
+          checks,
+          showOverlay: showOverlay,
+          forceReanalyze: false
+        }
+      }, '*');
+    });
+
+    // Force re-analyze button
+    reanalyzeBtn.addEventListener('click', () => {
+      if (isAnalyzing) return;
+
+      const checks = {
+        colorContrast: document.getElementById('checkContrast').checked,
+        textSpacing: document.getElementById('checkTextSpacing').checked,
+        lineHeight: document.getElementById('checkLineHeight').checked,
+        paragraphSpacing: document.getElementById('checkParagraphSpacing').checked,
+        nonTextContrast: document.getElementById('checkNonText').checked
+      };
+
+      isAnalyzing = true;
+      isPaused = false;
+      analyzeBtn.disabled = true;
+      analyzeBtn.innerHTML = '<span>⌛</span><span>Analyzing...</span>';
+
+      progressContainer.classList.add('show');
+      results.classList.remove('show');
+      cacheStatus.classList.remove('show');
+
+      parent.postMessage({
+        pluginMessage: {
+          type: 'analyze',
+          checks,
+          showOverlay: showOverlay,
+          forceReanalyze: true
+        }
+      }, '*');
+
+      showNotification('Running fresh analysis...', 'success');
+    });
+
+    // Clear cache button
+    clearCacheBtn.addEventListener('click', () => {
+      parent.postMessage({ pluginMessage: { type: 'clear-cache' } }, '*');
+    });
+
+    // Pause button
+    pauseBtn.addEventListener('click', () => {
+      if (isPaused) {
+        parent.postMessage({ pluginMessage: { type: 'resume-analysis' } }, '*');
+        pauseBtn.innerHTML = '<span>⏸</span> Pause';
+        isPaused = false;
+      } else {
+        parent.postMessage({ pluginMessage: { type: 'pause-analysis' } }, '*');
+        pauseBtn.innerHTML = '<span>▶</span> Resume';
+        isPaused = true;
+      }
+    });
+
+    // Cancel button
+    cancelBtn.addEventListener('click', () => {
+      parent.postMessage({ pluginMessage: { type: 'clear-overlays' } }, '*');
+      progressContainer.classList.remove('show');
+      isAnalyzing = false;
+      analyzeBtn.disabled = false;
+      analyzeBtn.innerHTML = '<span>▶</span><span>Start Analysis</span>';
+      showNotification('Analysis cancelled', 'warning');
+    });
+
+    // Overlay controls
+    toggleOverlayBtn.addEventListener('click', () => {
+      overlayVisible = !overlayVisible;
+      parent.postMessage({
+        pluginMessage: { type: 'toggle-overlay', visible: overlayVisible }
+      }, '*');
+      toggleOverlayBtn.textContent = overlayVisible ? '🙈 Hide Overlay' : '👁️ Show Overlay';
+    });
+
+    clearOverlayBtn.addEventListener('click', () => {
+      parent.postMessage({ pluginMessage: { type: 'clear-overlays' } }, '*');
+      overlayControls.style.display = 'none';
+      showNotification('Overlay cleared', 'success');
+    });
+
+    // Messages from plugin
+    window.onmessage = (event) => {
+      const msg = event.data.pluginMessage;
+      if (!msg) return;
+
+      console.log('Message received:', msg.type);
+
+      if (msg.type === 'selection-error') {
+        selectionStatus.className = 'selection-status status-error';
+        selectionStatus.innerHTML = `<span style="font-size: 16px;">❌</span><span>${msg.message}</span>`;
+        analyzeBtn.disabled = true;
+        results.classList.remove('show');
+      }
+
+      if (msg.type === 'selection-valid') {
+        selectionStatus.className = 'selection-status status-valid';
+        selectionStatus.innerHTML = `<span style="font-size: 16px;">✓</span><span><strong>Frame selected:</strong> ${msg.frameName}</span>`;
+        analyzeBtn.disabled = false;
+        clearCacheBtn.disabled = false;
+        analyzeBtn.innerHTML = '<span>▶</span><span>Start Analysis</span>';
+        parent.postMessage({ pluginMessage: { type: 'get-cache-info' } }, '*');
+      }
+
+      if (msg.type === 'cache-available') {
+        cacheStatus.classList.add('show');
+        cacheText.textContent = `Analysis from ${msg.age}`;
+      }
+
+      if (msg.type === 'cache-info') {
+        if (msg.hasCached) {
+          cacheStatus.classList.add('show');
+          cacheText.textContent = `Analysis from ${msg.age}`;
+        } else {
+          cacheStatus.classList.remove('show');
+        }
+      }
+
+      if (msg.type === 'cache-cleared') {
+        cacheStatus.classList.remove('show');
+        showNotification('Cache cleared', 'success');
+      }
+
+      if (msg.type === 'analysis-progress') {
+        const percent = msg.progress || 0;
+        progressFill.style.width = percent + '%';
+        progressStats.textContent = percent + '%';
+        elementStats.textContent = `Processing ${msg.current || 0} of ${msg.total || 0} elements`;
+      }
+
+      if (msg.type === 'analysis-paused') {
+        showNotification('Analysis paused', 'warning');
+      }
+
+      if (msg.type === 'analysis-resumed') {
+        showNotification('Analysis resumed', 'success');
+      }
+
+      if (msg.type === 'font-error') {
+        showNotification(`Font issue: ${msg.node}`, 'warning');
+      }
+
+      if (msg.type === 'analysis-complete') {
+        isAnalyzing = false;
+        progressContainer.classList.remove('show');
+        results.classList.add('show');
+        analyzeBtn.disabled = false;
+        analyzeBtn.innerHTML = '<span>▶</span><span>Start Analysis</span>';
+
+        const resultsHeader = document.querySelector('.results-header');
+
+        if (msg.fromCache) {
+          resultsHeader.classList.add('cached');
+          issueCount.innerHTML = `${msg.totalIssues} <span class="cache-badge">💾 ${msg.cacheAge}</span>`;
+        } else {
+          resultsHeader.classList.remove('cached');
+          issueCount.textContent = msg.totalIssues;
+        }
+
+        if (msg.totalIssues === 0) {
+          issuesList.innerHTML = `
+            <div class="success-state">
+              <div class="success-icon">✓</div>
+              <div class="success-title">Perfect Accessibility!</div>
+              <div class="success-desc">This frame meets all WCAG 2.2 AA standards</div>
+            </div>
+          `;
+          overlayControls.style.display = 'none';
+          showNotification('No issues found!', 'success');
+        } else {
+          displayIssues(msg.issues);
+          if (showOverlay) {
+            overlayControls.style.display = 'flex';
+          }
+          const notifMsg = msg.fromCache ? `Loaded ${msg.totalIssues} issues from cache` : `Found ${msg.totalIssues} accessibility issues`;
+          showNotification(notifMsg, msg.fromCache ? 'success' : 'warning');
+        }
+      }
+
+      if (msg.type === 'error') {
+        isAnalyzing = false;
+        progressContainer.classList.remove('show');
+        analyzeBtn.disabled = false;
+        analyzeBtn.innerHTML = '<span>▶</span><span>Start Analysis</span>';
+        showNotification(msg.message, 'error');
+      }
+
+      if (msg.type === 'supabase-connected') {
+        console.log('✓ Supabase connected - persistent history enabled');
+      }
+
+      if (msg.type === 'supabase-disconnected') {
+        console.log('⚠ Supabase not configured - using local cache only');
+      }
+
+      if (msg.type === 'unresolved-changes') {
+        displayUnresolvedChanges(msg.changes);
+      }
+
+      if (msg.type === 'frame-has-changes') {
+        cacheStatus.classList.add('show');
+        cacheText.innerHTML = `<span class="badge badge-changed">⚠ Frame changed - re-analyze recommended</span>`;
+      }
+
+      if (msg.type === 'all-analyses') {
+        currentHistory = msg.analyses;
+        displayHistory(msg.analyses);
+      }
+
+      if (msg.type === 'frame-history') {
+        displayFrameHistory(msg.history);
+      }
+
+      if (msg.type === 'cache-available') {
+        cacheStatus.classList.add('show');
+        const changeIndicator = msg.hasChanges ? ' <span class="badge badge-changed">Changed</span>' : '';
+        cacheText.innerHTML = `Analysis from ${msg.age}${changeIndicator}`;
+
+        if (msg.fromPersistent) {
+          console.log('✓ Loaded from persistent storage');
+        }
+      }
+    };
+
+    function displayIssues(groupedIssues) {
+      issuesList.innerHTML = '';
+
+      groupedIssues.forEach(group => {
+        const groupEl = document.createElement('div');
+        groupEl.className = 'element-group';
+
+        let issuesHTML = '';
+        group.issues.forEach(issue => {
+          const fixData = JSON.stringify(issue.suggestedFix).replace(/"/g, '&quot;');
+          issuesHTML += `
+            <div class="issue-item">
+              <div class="issue-header">
+                <div class="issue-type">
+                  ${issue.issueType}
+                  <span class="badge badge-${issue.severity}">${issue.severity}</span>
+                  <span class="badge badge-${issue.wcagLevel.toLowerCase()}">${issue.wcagLevel}</span>
+                </div>
+              </div>
+
+              <div class="issue-values">
+                <div class="value-box">
+                  <div class="value-label">Current Value</div>
+                  <div class="value-text">${issue.currentValue}</div>
+                </div>
+                <div class="value-box">
+                  <div class="value-label">Required Value</div>
+                  <div class="value-text">${issue.requiredValue}</div>
+                </div>
+              </div>
+
+              <div class="suggestion-box">
+                <div class="suggestion-title">💡 Suggested Fix</div>
+                <div class="suggestion-text">${issue.suggestion}</div>
+                <button class="btn-apply" onclick="applyFix(${issue.index}, '${fixData}')">
+                  Apply Fix Automatically
+                </button>
+              </div>
+            </div>
+          `;
+        });
+
+        groupEl.innerHTML = `
+          <div class="element-header">
+            <div class="element-title">
+              <div class="element-icon">📐</div>
+              <strong>${group.elementName}</strong>
+            </div>
+            <button class="jump-btn" onclick="jumpToElement('${group.elementId}')">
+              Jump To
+            </button>
+          </div>
+          ${issuesHTML}
+        `;
+
+        issuesList.appendChild(groupEl);
+      });
+    }
+
+    window.applyFix = (issueIndex, fixData) => {
+      const fix = JSON.parse(fixData.replace(/&quot;/g, '"'));
+      parent.postMessage({
+        pluginMessage: {
+          type: 'apply-fix',
+          issueIndex: issueIndex,
+          fix: fix
+        }
+      }, '*');
+      showNotification('Fix applied! Re-analyze to verify.', 'success');
+    };
+
+    window.jumpToElement = (elementId) => {
+      parent.postMessage({
+        pluginMessage: { type: 'jump-to-element', elementId }
+      }, '*');
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>A11y Audit Pro</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --border: #e5e7eb;
+      --bg: #ffffff;
+      --text: #1f2937;
+      --text-muted: #6b7280;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    .container {
+      width: 100%;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+
+    .header h1 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .header p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 12px 16px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-muted);
+      transition: all 0.2s;
+      border-bottom: 2px solid transparent;
+    }
+
+    .tab-btn:hover {
+      color: var(--text);
+      background: #f9fafb;
+    }
+
+    .tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    /* Tab Content */
+    .tab-content {
+      padding: 16px;
+      min-height: 400px;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+
+    .tab-content.hidden {
+      display: none;
+    }
+
+    /* Alert (Change Detection) */
+    .alert {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      margin-bottom: 16px;
+      border-radius: 8px;
+      border-left: 4px solid;
+    }
+
+    .alert.hidden {
+      display: none;
+    }
+
+    .alert-warning {
+      background: #fffbeb;
+      border-left-color: var(--warning);
+    }
+
+    .alert-icon {
+      font-size: 20px;
+    }
+
+    .alert-content {
+      flex: 1;
+    }
+
+    .alert-content strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--text);
+    }
+
+    .alert-content p {
+      margin: 0;
+      font-size: 12px;
+      color: #78350f;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover {
+      background: #f9fafb;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-muted);
+    }
+
+    .btn-ghost:hover {
+      background: #f9fafb;
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    /* Cards */
+    .card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .card h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+
+    /* Settings */
+    .settings-section {
+      margin-bottom: 24px;
+    }
+
+    .settings-section label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      cursor: pointer;
+    }
+
+    .settings-section input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .settings-section select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+
+    .info-box {
+      background: #f0f9ff;
+      border-left: 3px solid var(--primary);
+      padding: 12px;
+      margin-top: 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #1e40af;
+    }
+
+    /* Slider */
+    .slider-group {
+      margin-top: 12px;
+    }
+
+    .slider-group label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .slider-group input[type="range"] {
+      width: 100%;
+    }
+
+    /* Cache Info */
+    .cache-info {
+      padding: 12px;
+      background: #f9fafb;
+      border-radius: 6px;
+      margin: 12px 0;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* History */
+    .history-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .history-card:hover {
+      border-color: var(--primary);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .history-title {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .history-time {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .history-stats {
+      display: flex;
+      gap: 12px;
+      font-size: 12px;
+    }
+
+    /* Badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .badge-error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .badge-warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .badge-success {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .badge-info {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .empty-state h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .empty-state p {
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-muted);
+    }
+
+    .spinner {
+      border: 3px solid var(--border);
+      border-top: 3px solid var(--primary);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Developer Tools (Hidden by default) */
+    .dev-tools {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #1f2937;
+      color: white;
+      padding: 12px;
+      border-top: 2px solid var(--primary);
+      display: none;
+      z-index: 1000;
+    }
+
+    .dev-tools.visible {
+      display: block;
+    }
+
+    .dev-tools h4 {
+      font-size: 12px;
+      margin-bottom: 8px;
+      color: #9ca3af;
+    }
+
+    .dev-tools button {
+      margin-right: 8px;
+      margin-bottom: 4px;
+    }
+
+    .dev-tools .btn {
+      font-size: 11px;
+      padding: 4px 8px;
+    }
+
+    /* Analyze Section */
+    .analyze-section {
+      margin-bottom: 24px;
+    }
+
+    .frame-info {
+      background: #f9fafb;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 16px;
+    }
+
+    .frame-info strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--text);
+    }
+
+    .frame-info span {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .action-buttons button {
+      flex: 1;
+    }
+
+    /* Results */
+    .results-section {
+      margin-top: 16px;
+    }
+
+    .issue-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-left: 4px solid;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    .issue-card.fail {
+      border-left-color: var(--error);
+      background: #fef2f2;
+    }
+
+    .issue-card.warning {
+      border-left-color: var(--warning);
+      background: #fffbeb;
+    }
+
+    .issue-card.pass {
+      border-left-color: var(--success);
+      background: #f0fdf4;
+    }
+
+    .issue-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .issue-title {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .issue-details {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .issue-fix {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+
+    .issue-fix button {
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>🎯 A11y Audit Pro</h1>
+      <p>WCAG 2.0/2.1/2.2 Accessibility Checker</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="analyze">Analyze</button>
+      <button class="tab-btn" data-tab="history">History</button>
+      <button class="tab-btn" data-tab="settings">Settings</button>
+    </div>
+
+    <!-- Analyze Tab -->
+    <div class="tab-content" id="analyze-tab">
+      <!-- Change Alert -->
+      <div id="change-alert" class="alert alert-warning hidden">
+        <div class="alert-icon">⚠️</div>
+        <div class="alert-content">
+          <strong>Frame Modified</strong>
+          <p>This frame has been changed since last analysis.</p>
+        </div>
+        <button id="reanalyze-btn" class="btn btn-primary btn-sm">
+          Re-analyze
+        </button>
+        <button id="dismiss-alert-btn" class="btn btn-ghost btn-sm">
+          Dismiss
+        </button>
+      </div>
+
+      <!-- Analyze Section -->
+      <div class="analyze-section">
+        <div class="frame-info" id="frame-info">
+          <strong>No Frame Selected</strong>
+          <span>Select a frame to analyze</span>
+        </div>
+
+        <div class="action-buttons">
+          <button id="analyze-frame-btn" class="btn btn-primary" disabled>
+            🔍 Analyze Frame
+          </button>
+          <button id="clear-overlays-btn" class="btn btn-secondary">
+            Clear Overlays
+          </button>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div id="results-section" class="results-section">
+        <div class="empty-state">
+          <div class="empty-state-icon">🎨</div>
+          <h3>Ready to Analyze</h3>
+          <p>Select a frame and click "Analyze Frame" to check for accessibility issues.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- History Tab -->
+    <div class="tab-content hidden" id="history-tab">
+      <div class="card">
+        <h3>Analysis History</h3>
+        <div id="history-list">
+          <div class="loading">
+            <div class="spinner"></div>
+            <p>Loading history...</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Unresolved Changes</h3>
+        <div id="unresolved-list">
+          <div class="empty-state">
+            <p>No unresolved changes</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Tab -->
+    <div class="tab-content hidden" id="settings-tab">
+      <!-- WCAG Standard -->
+      <div class="card">
+        <h3>📋 WCAG Standard</h3>
+        <div class="settings-section">
+          <label>
+            <span>Version:</span>
+          </label>
+          <select id="wcag-version">
+            <option value="2.0">WCAG 2.0</option>
+            <option value="2.1" selected>WCAG 2.1 (Recommended)</option>
+            <option value="2.2">WCAG 2.2 (Latest)</option>
+          </select>
+
+          <label style="margin-top: 12px;">
+            <span>Level:</span>
+          </label>
+          <select id="wcag-level">
+            <option value="AA" selected>AA (Minimum Compliance)</option>
+            <option value="AAA">AAA (Enhanced Compliance)</option>
+          </select>
+
+          <div class="info-box" id="wcag-description">
+            WCAG 2.1 AA is recommended. Includes mobile and touch accessibility requirements.
+          </div>
+        </div>
+      </div>
+
+      <!-- Checks to Perform -->
+      <div class="card">
+        <h3>🎨 Checks to Perform</h3>
+        <div class="settings-section">
+          <label>
+            <input type="checkbox" id="check-color-contrast" checked>
+            <span>Color Contrast</span>
+          </label>
+          <label>
+            <input type="checkbox" id="check-text-spacing" checked>
+            <span>Text Spacing (WCAG 2.1+)</span>
+          </label>
+          <label>
+            <input type="checkbox" id="check-line-height" checked>
+            <span>Line Height</span>
+          </label>
+          <label>
+            <input type="checkbox" id="check-paragraph-spacing" checked>
+            <span>Paragraph Spacing</span>
+          </label>
+          <label>
+            <input type="checkbox" id="check-non-text-contrast" checked>
+            <span>Non-text Contrast (WCAG 2.1+)</span>
+          </label>
+          <label style="opacity: 0.5; cursor: not-allowed;">
+            <input type="checkbox" id="check-touch-targets" disabled>
+            <span>Touch Target Size (Coming Soon)</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Display Options -->
+      <div class="card">
+        <h3>🎯 Display Options</h3>
+        <div class="settings-section">
+          <label>
+            <input type="checkbox" id="show-overlays" checked>
+            <span>Show Visual Overlays</span>
+          </label>
+          <label>
+            <input type="checkbox" id="group-by-element" checked>
+            <span>Group Issues by Element</span>
+          </label>
+          <label>
+            <input type="checkbox" id="show-only-failures">
+            <span>Show Only Failing Checks</span>
+          </label>
+
+          <div class="slider-group">
+            <label>
+              <span>Overlay Opacity:</span>
+              <span id="opacity-value">70%</span>
+            </label>
+            <input type="range" id="overlay-opacity" min="0" max="100" value="70">
+          </div>
+        </div>
+      </div>
+
+      <!-- Cache Settings -->
+      <div class="card">
+        <h3>💾 Cache Settings</h3>
+        <div class="settings-section">
+          <label>
+            <span>Cache TTL (days):</span>
+          </label>
+          <input type="number" id="cache-ttl" value="7" min="1" max="30" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; margin-top: 8px;">
+
+          <div class="cache-info" id="cache-size-info">
+            Current Cache: Calculating...
+          </div>
+
+          <button id="clear-cache-btn" class="btn btn-secondary" style="width: 100%;">
+            Clear All Cache
+          </button>
+        </div>
+      </div>
+
+      <!-- Save Settings -->
+      <button id="save-settings-btn" class="btn btn-primary" style="width: 100%; margin-top: 16px;">
+        💾 Save Settings
+      </button>
+    </div>
+
+    <!-- Developer Tools (Toggle with Cmd+Shift+D) -->
+    <div class="dev-tools" id="dev-tools">
+      <h4>🛠️ Developer Tools</h4>
+      <button class="btn btn-secondary btn-sm" onclick="clearLocalStorage()">Clear localStorage</button>
+      <button class="btn btn-secondary btn-sm" onclick="showLocalStorage()">Show localStorage</button>
+      <button class="btn btn-secondary btn-sm" onclick="testAlert()">Test Alert</button>
+      <button class="btn btn-ghost btn-sm" onclick="toggleDevTools()">Hide</button>
+    </div>
+  </div>
+
+  <script>
+    // ========================================
+    // Tab Management
+    // ========================================
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tabName = btn.dataset.tab;
+        
+        // Update buttons
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // Update content
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+        document.getElementById(`${tabName}-tab`).classList.remove('hidden');
+        
+        // Load data if needed
+        if (tabName === 'settings') {
+          loadSettingsUI();
+        } else if (tabName === 'history') {
+          loadHistory();
+        }
+      });
+    });
+
+    // ========================================
+    // WCAG Version Descriptions
+    // ========================================
+    const wcagDescriptions = {
+      '2.0-AA': 'WCAG 2.0 AA: Most widely supported. Required for US Section 508 compliance.',
+      '2.0-AAA': 'WCAG 2.0 AAA: Enhanced accessibility with stricter contrast requirements.',
+      '2.1-AA': 'WCAG 2.1 AA: Recommended. Includes mobile and touch accessibility requirements.',
+      '2.1-AAA': 'WCAG 2.1 AAA: Enhanced mobile accessibility with stricter requirements.',
+      '2.2-AA': 'WCAG 2.2 AA: Latest standard (2023). Includes focus appearance and more.',
+      '2.2-AAA': 'WCAG 2.2 AAA: Strictest requirements. Future-proof your designs.',
+    };
+
+    function updateWCAGDescription() {
+      const version = document.getElementById('wcag-version').value;
+      const level = document.getElementById('wcag-level').value;
+      const key = `${version}-${level}`;
+      document.getElementById('wcag-description').textContent = wcagDescriptions[key];
+    }
+
+    document.getElementById('wcag-version').addEventListener('change', updateWCAGDescription);
+    document.getElementById('wcag-level').addEventListener('change', updateWCAGDescription);
+
+    // ========================================
+    // Settings Management
+    // ========================================
+    function loadSettingsUI() {
+      parent.postMessage({ pluginMessage: { type: 'get-settings' } }, '*');
+    }
+
+    function saveSettings() {
+      const settings = {
+        wcag: {
+          version: document.getElementById('wcag-version').value,
+          level: document.getElementById('wcag-level').value,
+        },
+        checks: {
+          colorContrast: document.getElementById('check-color-contrast').checked,
+          textSpacing: document.getElementById('check-text-spacing').checked,
+          lineHeight: document.getElementById('check-line-height').checked,
+          paragraphSpacing: document.getElementById('check-paragraph-spacing').checked,
+          nonTextContrast: document.getElementById('check-non-text-contrast').checked,
+        },
+        display: {
+          showOverlays: document.getElementById('show-overlays').checked,
+          groupByElement: document.getElementById('group-by-element').checked,
+          showOnlyFailures: document.getElementById('show-only-failures').checked,
+          overlayOpacity: parseInt(document.getElementById('overlay-opacity').value),
+        },
+        cache: {
+          ttlDays: parseInt(document.getElementById('cache-ttl').value),
+        },
+      };
+      
+      parent.postMessage({ 
+        pluginMessage: { 
+          type: 'save-settings',
+          settings 
+        } 
+      }, '*');
+      
+      showNotification('Settings saved successfully!', 'success');
+    }
+
+    document.getElementById('save-settings-btn').addEventListener('click', saveSettings);
+
+    // Opacity slider
+    document.getElementById('overlay-opacity').addEventListener('input', (e) => {
+      document.getElementById('opacity-value').textContent = `${e.target.value}%`;
+    });
+
+    // Clear cache
+    document.getElementById('clear-cache-btn').addEventListener('click', () => {
+      if (confirm('Clear all cached analyses? This cannot be undone.')) {
+        parent.postMessage({ pluginMessage: { type: 'clear-all-cache' } }, '*');
+        showNotification('Cache cleared successfully!', 'success');
+      }
+    });
+
+    // ========================================
+    // Change Detection Alert
+    // ========================================
+    document.getElementById('reanalyze-btn').addEventListener('click', () => {
+      document.getElementById('change-alert').classList.add('hidden');
+      parent.postMessage({ pluginMessage: { type: 'analyze-frame' } }, '*');
+    });
+
+    document.getElementById('dismiss-alert-btn').addEventListener('click', () => {
+      document.getElementById('change-alert').classList.add('hidden');
+    });
+
+    // ========================================
+    // Analyze Frame
+    // ========================================
+    document.getElementById('analyze-frame-btn').addEventListener('click', () => {
+      parent.postMessage({ pluginMessage: { type: 'analyze-frame' } }, '*');
+    });
+
+    document.getElementById('clear-overlays-btn').addEventListener('click', () => {
+      parent.postMessage({ pluginMessage: { type: 'clear-overlays' } }, '*');
+    });
+
+    // ========================================
+    // History Management
+    // ========================================
+    function loadHistory() {
+      parent.postMessage({ pluginMessage: { type: 'get-all-analyses' } }, '*');
+      parent.postMessage({ pluginMessage: { type: 'get-unresolved-changes' } }, '*');
+    }
+
+    function displayHistory(analyses) {
+      const historyList = document.getElementById('history-list');
+      
+      if (!analyses || analyses.length === 0) {
+        historyList.innerHTML = `
+          <div class="empty-state">
+            <p>No analysis history yet</p>
+          </div>
+        `;
+        return;
+      }
+
+      historyList.innerHTML = analyses.map(analysis => {
+        const date = new Date(analysis.analyzed_at);
+        const timeAgo = getTimeAgo(date);
+        const issues = analysis.analysis_data?.issues || [];
+        const failCount = issues.filter(i => i.severity === 'fail').length;
+        const warnCount = issues.filter(i => i.severity === 'warning').length;
+        const passCount = issues.filter(i => i.severity === 'pass').length;
+
+        return `
+          <div class="history-card" onclick="selectHistoryFrame('${analysis.frame_id}')">
+            <div class="history-header">
+              <span class="history-title">Frame: ${analysis.frame_id.substring(0, 8)}...</span>
+              <span class="history-time">${timeAgo}</span>
+            </div>
+            <div class="history-stats">
+              ${failCount > 0 ? `<span class="badge badge-error">${failCount} Critical</span>` : ''}
+              ${warnCount > 0 ? `<span class="badge badge-warning">${warnCount} Warnings</span>` : ''}
+              ${passCount > 0 ? `<span class="badge badge-success">${passCount} Passed</span>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function displayUnresolvedChanges(changes) {
+      const unresolvedList = document.getElementById('unresolved-list');
+      
+      if (!changes || changes.length === 0) {
+        unresolvedList.innerHTML = `
+          <div class="empty-state">
+            <p>No unresolved changes</p>
+          </div>
+        `;
+        return;
+      }
+
+      unresolvedList.innerHTML = changes.map(change => {
+        const date = new Date(change.detected_at);
+        const timeAgo = getTimeAgo(date);
+
+        return `
+          <div class="history-card" onclick="selectHistoryFrame('${change.frame_id}')">
+            <div class="history-header">
+              <span class="history-title">Frame: ${change.frame_id.substring(0, 8)}...</span>
+              <span class="history-time">${timeAgo}</span>
+            </div>
+            <span class="badge badge-warning">Needs Re-analysis</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectHistoryFrame(frameId) {
+      parent.postMessage({ 
+        pluginMessage: { 
+          type: 'select-frame',
+          frameId 
+        } 
+      }, '*');
+    }
+
+    function getTimeAgo(date) {
+      const seconds = Math.floor((new Date() - date) / 1000);
+      
+      if (seconds < 60) return 'Just now';
+      if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+      if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+      if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+      
+      return date.toLocaleDateString();
+    }
+
+    // ========================================
+    // Message Handler (from code.ts)
+    // ========================================
+    window.addEventListener('message', (event) => {
+      const msg = event.data.pluginMessage;
+      if (!msg) return;
+
+      switch (msg.type) {
+        case 'frame-changed':
+          document.getElementById('change-alert').classList.remove('hidden');
+          break;
+
+        case 'frame-selected':
+          const frameInfo = document.getElementById('frame-info');
+          frameInfo.innerHTML = `
+            <strong>${msg.frameName}</strong>
+            <span>${msg.layerCount} layers</span>
+          `;
+          document.getElementById('analyze-frame-btn').disabled = false;
+          break;
+
+        case 'no-frame-selected':
+          const noFrameInfo = document.getElementById('frame-info');
+          noFrameInfo.innerHTML = `
+            <strong>No Frame Selected</strong>
+            <span>Select a frame to analyze</span>
+          `;
+          document.getElementById('analyze-frame-btn').disabled = true;
+          break;
+
+        case 'analysis-complete':
+          displayResults(msg.results);
+          break;
+
+        case 'settings-loaded':
+          populateSettings(msg.settings);
+          break;
+
+        case 'all-analyses':
+          displayHistory(msg.analyses);
+          break;
+
+        case 'unresolved-changes':
+          displayUnresolvedChanges(msg.changes);
+          break;
+
+        case 'notification':
+          showNotification(msg.message, msg.level);
+          break;
+      }
+    });
+
+    function populateSettings(settings) {
+      if (!settings) return;
+
+      // WCAG
+      if (settings.wcag) {
+        document.getElementById('wcag-version').value = settings.wcag.version || '2.1';
+        document.getElementById('wcag-level').value = settings.wcag.level || 'AA';
+        updateWCAGDescription();
+      }
+
+      // Checks
+      if (settings.checks) {
+        document.getElementById('check-color-contrast').checked = settings.checks.colorContrast !== false;
+        document.getElementById('check-text-spacing').checked = settings.checks.textSpacing !== false;
+        document.getElementById('check-line-height').checked = settings.checks.lineHeight !== false;
+        document.getElementById('check-paragraph-spacing').checked = settings.checks.paragraphSpacing !== false;
+        document.getElementById('check-non-text-contrast').checked = settings.checks.nonTextContrast !== false;
+      }
+
+      // Display
+      if (settings.display) {
+        document.getElementById('show-overlays').checked = settings.display.showOverlays !== false;
+        document.getElementById('group-by-element').checked = settings.display.groupByElement !== false;
+        document.getElementById('show-only-failures').checked = settings.display.showOnlyFailures === true;
+        
+        const opacity = settings.display.overlayOpacity || 70;
+        document.getElementById('overlay-opacity').value = opacity;
+        document.getElementById('opacity-value').textContent = `${opacity}%`;
+      }
+
+      // Cache
+      if (settings.cache) {
+        document.getElementById('cache-ttl').value = settings.cache.ttlDays || 7;
+      }
+    }
+
+    function displayResults(results) {
+      const resultsSection = document.getElementById('results-section');
+      
+      if (!results || results.length === 0) {
+        resultsSection.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">✅</div>
+            <h3>No Issues Found!</h3>
+            <p>This frame passes all accessibility checks.</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Group by severity
+      const critical = results.filter(r => r.severity === 'fail');
+      const warnings = results.filter(r => r.severity === 'warning');
+      const passed = results.filter(r => r.severity === 'pass');
+
+      let html = '<div class="results-summary" style="margin-bottom: 16px;">';
+      html += `<h3>Analysis Results</h3>`;
+      html += `<div style="display: flex; gap: 8px; margin-top: 8px;">`;
+      if (critical.length > 0) html += `<span class="badge badge-error">${critical.length} Critical</span>`;
+      if (warnings.length > 0) html += `<span class="badge badge-warning">${warnings.length} Warnings</span>`;
+      if (passed.length > 0) html += `<span class="badge badge-success">${passed.length} Passed</span>`;
+      html += `</div></div>`;
+
+      // Display issues
+      [...critical, ...warnings, ...passed].forEach(issue => {
+        html += `
+          <div class="issue-card ${issue.severity}">
+            <div class="issue-header">
+              <span class="issue-title">${issue.issueType}</span>
+              <span class="badge badge-${issue.severity === 'fail' ? 'error' : issue.severity === 'warning' ? 'warning' : 'success'}">
+                ${issue.severity.toUpperCase()}
+              </span>
+            </div>
+            <div class="issue-details">
+              <strong>Element:</strong> ${issue.elementName}<br>
+              <strong>Current:</strong> ${issue.currentValue}<br>
+              <strong>Required:</strong> ${issue.requiredValue} (WCAG ${issue.wcagLevel})
+            </div>
+            ${issue.suggestion ? `
+              <div class="issue-details" style="margin-top: 8px;">
+                <strong>💡 Suggestion:</strong> ${issue.suggestion}
+              </div>
+            ` : ''}
+            ${issue.suggestedFix ? `
+              <div class="issue-fix">
+                <button class="btn btn-primary btn-sm" onclick="applyFix('${issue.elementId}', ${JSON.stringify(issue.suggestedFix).replace(/"/g, '&quot;')})">
+                  Apply Fix
+                </button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      });
+
+      resultsSection.innerHTML = html;
+    }
+
+    function applyFix(elementId, fix) {
+      parent.postMessage({
+        pluginMessage: {
+          type: 'apply-fix',
+          elementId,
+          fix
+        }
+      }, '*');
+    }
+
+    // ========================================
+    // Notifications
+    // ========================================
+    function showNotification(message, type = 'info') {
+      // You can implement a toast notification here
+      console.log(`[${type.toUpperCase()}] ${message}`);
+      
+      // Simple alert for now (you can replace with a toast library)
+      alert(message);
+    }
+
+    // ========================================
+    // Developer Tools
+    // ========================================
+    function toggleDevTools() {
+      const devTools = document.getElementById('dev-tools');
+      devTools.classList.toggle('visible');
+    }
+
+    function clearLocalStorage() {
+      const before = localStorage.length;
+      localStorage.clear();
+      const after = localStorage.length;
+      console.log(`Cleared ${before} items from localStorage`);
+      alert(`localStorage cleared! (${before} items removed)`);
+    }
+
+    function showLocalStorage() {
+      console.log('Current localStorage:', { ...localStorage });
+      alert(`localStorage has ${localStorage.length} items. Check console for details.`);
+    }
+
+    function testAlert() {
+      document.getElementById('change-alert').classList.remove('hidden');
+    }
+
+    // Keyboard shortcut: Cmd/Ctrl + Shift + D
+    document.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'D') {
+        e.preventDefault();
+        toggleDevTools();
+      }
+    });
+
+    // ========================================
+    // Initialize
+    // ========================================
+    updateWCAGDescription();
+    console.log('A11y Audit Pro UI loaded');
+    console.log('Press Cmd/Ctrl + Shift + D to toggle developer tools');
+  </script>
+</body>
+</html>
