@@ -226,10 +226,11 @@ figma.on('selectionchange', async () => {
       
       const groupedIssues = groupIssuesByElement(cached.results);
       
-      // Send selection valid
+      // Send frame selected
       figma.ui.postMessage({ 
-        type: 'selection-valid', 
-        frameName: selectedFrame.name 
+        type: 'frame-selected', 
+        frameName: selectedFrame.name,
+        layerCount: countElements(selectedFrame)
       });
       
       // Send cache info
@@ -251,12 +252,13 @@ figma.on('selectionchange', async () => {
     } else {
       // No cache - just show frame selected
       figma.ui.postMessage({ 
-        type: 'selection-valid', 
-        frameName: selectedFrame.name 
+        type: 'frame-selected', 
+        frameName: selectedFrame.name,
+        layerCount: countElements(selectedFrame)
       });
     }
   } else {
-    figma.ui.postMessage({ type: 'selection-error', message: 'Please select a frame (not a single element)' });
+    figma.ui.postMessage({ type: 'no-frame-selected', message: 'Please select a frame (not a single element)' });
     selectedFrame = null;
   }
 });
@@ -394,7 +396,79 @@ figma.ui.onmessage = async (msg) => {
       });
     }
   }
+
+  if (msg.type === 'get-settings') {
+    const settings = loadSettings();
+    figma.ui.postMessage({
+      type: 'settings-loaded',
+      settings
+    });
+  }
+
+  if (msg.type === 'save-settings') {
+    saveSettings(msg.settings);
+    figma.ui.postMessage({
+      type: 'notification',
+      message: 'Settings saved successfully',
+      level: 'success'
+    });
+  }
 };
+
+// ============================================
+// SETTINGS MANAGEMENT
+// ============================================
+
+interface Settings {
+  wcag: { version: '2.0' | '2.1' | '2.2'; level: 'AA' | 'AAA' };
+  checks: Record<string, boolean>;
+  display: { showOverlays: boolean; groupByElement: boolean; showOnlyFailures: boolean; overlayOpacity: number };
+  cache: { ttlDays: number };
+}
+
+function loadSettings(): Settings {
+  const stored = figma.root.getPluginData('settings');
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch (error) {
+      console.error('Failed to load settings:', error);
+    }
+  }
+  
+  return getDefaultSettings();
+}
+
+function saveSettings(settings: Settings): void {
+  try {
+    figma.root.setPluginData('settings', JSON.stringify(settings));
+    console.log('✓ Settings saved');
+  } catch (error) {
+    console.error('Failed to save settings:', error);
+  }
+}
+
+function getDefaultSettings(): Settings {
+  return {
+    wcag: { version: '2.1', level: 'AA' },
+    checks: {
+      colorContrast: true,
+      textSpacing: true,
+      lineHeight: true,
+      paragraphSpacing: true,
+      nonTextContrast: true
+    },
+    display: {
+      showOverlays: true,
+      groupByElement: true,
+      showOnlyFailures: false,
+      overlayOpacity: 70
+    },
+    cache: {
+      ttlDays: 7
+    }
+  };
+}
 
 // ============================================
 // ANALYSIS FUNCTIONS
