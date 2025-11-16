@@ -7,6 +7,26 @@ const PLUGIN_DATA_KEY = 'a11y-analysis';
 
 const analysisCache = new Map<string, CachedAnalysis>();
 
+const DEFAULT_SETTINGS: UserSettings = {
+  wcag: { version: '2.1', level: 'AA' },
+  checks: {
+    colorContrast: true,
+    textSpacing: true,
+    lineHeight: true,
+    paragraphSpacing: true,
+    nonTextContrast: true
+  },
+  display: {
+    showOverlays: true,
+    groupByElement: true,
+    showOnlyFailures: false,
+    overlayOpacity: 70
+  },
+  cache: {
+    ttlDays: 7
+  }
+};
+
 interface CachedAnalysis {
   timestamp: number;
   version: string;
@@ -29,6 +49,29 @@ interface AccessibilityIssue {
     y: number;
     width: number;
     height: number;
+  };
+}
+
+interface UserSettings {
+  wcag: {
+    version: '2.0' | '2.1' | '2.2';
+    level: 'AA' | 'AAA';
+  };
+  checks: {
+    colorContrast: boolean;
+    textSpacing: boolean;
+    lineHeight: boolean;
+    paragraphSpacing: boolean;
+    nonTextContrast: boolean;
+  };
+  display: {
+    showOverlays: boolean;
+    groupByElement: boolean;
+    showOnlyFailures: boolean;
+    overlayOpacity: number;
+  };
+  cache: {
+    ttlDays: number;
   };
 }
 
@@ -268,152 +311,154 @@ figma.on('selectionchange', async () => {
 // ============================================
 
 figma.ui.onmessage = async (msg) => {
-  if (msg.type === 'pause-analysis') {
-    isPaused = true;
-    figma.notify('⏸ Analysis paused');
-    figma.ui.postMessage({ type: 'analysis-paused' });
-  }
+  console.log('Received message:', msg.type);
 
-  if (msg.type === 'resume-analysis') {
-    isPaused = false;
-    figma.notify('▶ Analysis resumed');
-    figma.ui.postMessage({ type: 'analysis-resumed' });
-  }
-
-  if (msg.type === 'analyze') {
-    try {
-      console.log('Analysis started');
-      isPaused = false;
-      analysisProgress = 0;
-
+  switch (msg.type) {
+    case 'get-settings':
+      const settings = await loadSettings();
+      figma.ui.postMessage({ 
+        type: 'settings-loaded',
+        settings 
+      });
+      break;
+    
+    case 'save-settings':
+      await saveSettings(msg.settings);
+      figma.ui.postMessage({ 
+        type: 'settings-saved'
+      });
+      break;
+    
+    case 'analyze-frame':
       if (!selectedFrame) {
         figma.ui.postMessage({ type: 'error', message: 'Please select a frame first' });
         return;
       }
-
-      const forceReanalyze = msg.forceReanalyze || false;
-
-      if (!forceReanalyze) {
-        const cached = getCachedAnalysis(selectedFrame);
-        if (cached) {
-          console.log('⚡ Using cached results');
-          const groupedIssues = groupIssuesByElement(cached.results);
-          figma.ui.postMessage({
-            type: 'analysis-complete',
-            issues: groupedIssues,
-            totalIssues: cached.results.length,
-            fromCache: true,
-            cacheAge: getCacheAge(cached.timestamp)
-          });
-
-          if (cached.results.length > 0 && msg.showOverlay) {
-            currentIssues = cached.results;
-            await createOverlayFrame(selectedFrame, cached.results);
-          }
-
-          figma.notify(`⚡ Loaded from cache (${getCacheAge(cached.timestamp)})`);
-          return;
+      try {
+        const checks = msg.checks || (await loadSettings()).checks;
+        currentIssues = [];
+        clearOverlays();
+        totalElements = countElements(selectedFrame);
+        
+        await analyzeFrame(selectedFrame, checks);
+        setCachedAnalysis(selectedFrame, currentIssues);
+        
+        const groupedIssues = groupIssuesByElement(currentIssues);
+        figma.ui.postMessage({
+          type: 'analysis-complete',
+          issues: groupedIssues,
+          totalIssues: currentIssues.length,
+          fromCache: false
+        });
+        
+        if (currentIssues.length > 0 && msg.showOverlay) {
+          await createOverlayFrame(selectedFrame, currentIssues);
         }
+      } catch (error) {
+        console.error('Analysis error:', error);
+        figma.ui.postMessage({ type: 'error', message: 'Analysis failed: ' + error });
       }
-
-      console.log('Running fresh analysis');
-      const checks = msg.checks;
-      currentIssues = [];
-
-      clearOverlays();
-
-      totalElements = countElements(selectedFrame);
-      figma.ui.postMessage({ type: 'analysis-progress', progress: 0, total: totalElements });
-
-      console.log('Analyzing frame:', selectedFrame.name, 'with', totalElements, 'elements');
-      await analyzeFrame(selectedFrame, checks);
-      console.log('Analysis complete. Issues found:', currentIssues.length);
-
-      setCachedAnalysis(selectedFrame, currentIssues);
-
-      const groupedIssues = groupIssuesByElement(currentIssues);
-
+      break;
+    
+    case 'get-all-analyses':
+      // TODO: Implement with backend if needed
       figma.ui.postMessage({
-        type: 'analysis-complete',
-        issues: groupedIssues,
-        totalIssues: currentIssues.length,
-        fromCache: false
+        type: 'all-analyses',
+        analyses: []
       });
-
-      if (currentIssues.length > 0 && msg.showOverlay) {
-        await createOverlayFrame(selectedFrame, currentIssues);
-      }
-
-      figma.notify(`✓ Analysis complete! Found ${currentIssues.length} issues.`);
-    } catch (error) {
-      console.error('Analysis error:', error);
-      figma.ui.postMessage({ type: 'error', message: 'Analysis failed: ' + error });
-      figma.notify('❌ Analysis failed. Check console for details.');
-    }
-  }
-
-  if (msg.type === 'apply-fix') {
-    await applyFix(msg.issueIndex, msg.fix);
-  }
-
-  if (msg.type === 'toggle-overlay') {
-    if (overlayFrame) {
-      overlayFrame.visible = msg.visible;
-    }
-  }
-
-  if (msg.type === 'clear-overlays') {
-    clearOverlays();
-  }
-
-  if (msg.type === 'jump-to-element') {
-    const node = figma.getNodeById(msg.elementId);
-    if (node) {
-      figma.currentPage.selection = [node as SceneNode];
-      figma.viewport.scrollAndZoomIntoView([node as SceneNode]);
-    }
-  }
-
-  if (msg.type === 'clear-cache') {
-    if (selectedFrame) {
-      clearFrameCache(selectedFrame);
-      figma.notify('✓ Cache cleared for this frame');
+      break;
+    
+    case 'clear-all-cache':
+      clearAllCaches();
       figma.ui.postMessage({ type: 'cache-cleared' });
-    }
-  }
-
-  if (msg.type === 'clear-all-caches') {
-    clearAllCaches();
-  }
-
-  if (msg.type === 'get-cache-info') {
-    if (selectedFrame) {
-      const cached = getCachedAnalysis(selectedFrame);
-      figma.ui.postMessage({
-        type: 'cache-info',
-        hasCached: !!cached,
-        age: cached ? getCacheAge(cached.timestamp) : null
-      });
-    }
-  }
-
-  if (msg.type === 'get-settings') {
-    const settings = loadSettings();
-    figma.ui.postMessage({
-      type: 'settings-loaded',
-      settings
-    });
-  }
-
-  if (msg.type === 'save-settings') {
-    saveSettings(msg.settings);
-    figma.ui.postMessage({
-      type: 'notification',
-      message: 'Settings saved successfully',
-      level: 'success'
-    });
+      break;
+    
+    case 'apply-fix':
+      if (msg.issueIndex !== undefined && currentIssues[msg.issueIndex]) {
+        const issue = currentIssues[msg.issueIndex];
+        await applyFix(msg.issueIndex, issue.suggestedFix);
+      }
+      break;
+    
+    case 'pause-analysis':
+      isPaused = true;
+      figma.ui.postMessage({ type: 'analysis-paused' });
+      break;
+    
+    case 'resume-analysis':
+      isPaused = false;
+      figma.ui.postMessage({ type: 'analysis-resumed' });
+      break;
+    
+    case 'toggle-overlay':
+      if (overlayFrame) {
+        overlayFrame.visible = msg.visible;
+      }
+      break;
+    
+    case 'clear-overlays':
+      clearOverlays();
+      break;
+    
+    case 'jump-to-element':
+      const node = figma.getNodeById(msg.elementId);
+      if (node) {
+        figma.currentPage.selection = [node as SceneNode];
+        figma.viewport.scrollAndZoomIntoView([node as SceneNode]);
+      }
+      break;
+    
+    case 'clear-cache':
+      if (selectedFrame) {
+        clearFrameCache(selectedFrame);
+        figma.ui.postMessage({ type: 'cache-cleared' });
+      }
+      break;
   }
 };
+
+// ============================================
+// SELECTION CHANGE EVENT
+// ============================================
+
+figma.on('selectionchange', () => {
+  const selection = figma.currentPage.selection;
+  
+  if (selection.length === 1 && selection[0].type === 'FRAME') {
+    selectedFrame = selection[0] as FrameNode;
+    const hasCache = !!getCachedAnalysis(selectedFrame);
+    
+    figma.ui.postMessage({
+      type: 'frame-selected',
+      frameName: selectedFrame.name,
+      frameId: selectedFrame.id,
+      layerCount: countElements(selectedFrame),
+      hasCache
+    });
+  } else {
+    selectedFrame = null;
+    figma.ui.postMessage({
+      type: 'frame-deselected'
+    });
+  }
+});
+
+// Broadcast initial selection on load (100ms delay to ensure UI ready)
+setTimeout(() => {
+  const selection = figma.currentPage.selection;
+  if (selection.length === 1 && selection[0].type === 'FRAME') {
+    selectedFrame = selection[0] as FrameNode;
+    const hasCache = !!getCachedAnalysis(selectedFrame);
+    
+    figma.ui.postMessage({
+      type: 'frame-selected',
+      frameName: selectedFrame.name,
+      frameId: selectedFrame.id,
+      layerCount: countElements(selectedFrame),
+      hasCache
+    });
+  }
+}, 100);
 
 // ============================================
 // SETTINGS MANAGEMENT

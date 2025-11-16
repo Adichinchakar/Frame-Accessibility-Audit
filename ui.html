@@ -2389,25 +2389,9 @@
     // INITIALIZATION
     // ========================================
     function initializeApp() {
-      const onboardingCompleted = localStorage.getItem('a11y-onboarding-completed');
-      
-      if (onboardingCompleted) {
-        // Check if user is authenticated
-        // TODO: Implement actual auth check
-        const isAuthChecked = localStorage.getItem('a11y-auth-checked');
-        
-        if (isAuthChecked) {
-          showMainApp();
-        } else {
-          showLoginScreen();
-        }
-      } else {
-        showOnboarding();
-      }
-      
-      // Set WCAG description
+      // Just show the main app (skip onboarding for now)
+      showMainApp();
       updateWCAGDescription();
-      
       console.log('A11y Audit Pro initialized');
     }
 
