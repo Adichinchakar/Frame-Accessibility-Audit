@@ -2,6 +2,7 @@
   "name": "A11y Audit Pro",
   "id": "1571488947872228693",
   "api": "1.0.0",
+  "version": "1.1.0",
   "main": "dist/code.js",
   "ui": "dist/ui.html",
   "editorType": ["figma"],
