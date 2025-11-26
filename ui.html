@@ -254,10 +254,12 @@
       border-radius: 3px;
       background: hsl(var(--border));
       outline: none;
+      appearance: none;
       -webkit-appearance: none;
     }
 
     .slider::-webkit-slider-thumb {
+      appearance: none;
       -webkit-appearance: none;
       width: 18px;
       height: 18px;
@@ -873,26 +875,14 @@
       if (el) {
         el.classList.toggle('open');
         // Save preference
-        try {
-          const isOpen = el.classList.contains('open');
-          localStorage.setItem('checks-collapsible-open', isOpen ? 'true' : 'false');
-        } catch (e) {
-          // localStorage might not be available in Figma plugin
-        }
+        // Persist UI state via plugin settings in future (removed localStorage for Figma)
       }
     }
 
     // Restore collapsible state on load
     function restoreCollapsibleState() {
-      try {
-        const savedState = localStorage.getItem('checks-collapsible-open');
-        const el = document.getElementById('checks-collapsible');
-        if (el && savedState === 'false') {
-          el.classList.remove('open');
-        }
-      } catch (e) {
-        // localStorage might not be available
-      }
+      // Collapsible state persistence removed (figma.clientStorage should be used instead).
+      // Keep defaults (open state defined in markup/CSS).
     }
 
     // ==========================================
@@ -1373,10 +1363,7 @@
         settingsCheckbox.checked = checked;
       }
       
-      // Save preference locally
-      try {
-        localStorage.setItem('a11y-show-overlay', checked ? 'true' : 'false');
-      } catch (e) { /* ignore */ }
+      // Preference persistence handled when user saves settings (via Save Settings)
       
       // Tell plugin to show/hide overlays
       parent.postMessage({ 
@@ -1388,16 +1375,7 @@
     }
 
     function restoreOverlayState() {
-      try {
-        const saved = localStorage.getItem('a11y-show-overlay');
-        if (saved !== null) {
-          showOverlay = saved === 'true';
-          const toggle = document.getElementById('show-overlay-toggle');
-          const settingsCheckbox = document.getElementById('show-overlays');
-          if (toggle) toggle.checked = showOverlay;
-          if (settingsCheckbox) settingsCheckbox.checked = showOverlay;
-        }
-      } catch (e) { /* ignore */ }
+      // Overlay state will be initialized from plugin settings via `settings-loaded` message.
     }
 
     // Sync settings checkbox with analyze page toggle
@@ -1405,9 +1383,7 @@
       const toggle = document.getElementById('show-overlay-toggle');
       if (toggle) toggle.checked = e.target.checked;
       showOverlay = e.target.checked;
-      try {
-        localStorage.setItem('a11y-show-overlay', showOverlay ? 'true' : 'false');
-      } catch (e) { /* ignore */ }
+      // Persistence will occur when user clicks Save Settings
     });
 
     // ==========================================
@@ -1415,6 +1391,8 @@
     // ==========================================
     console.log('A11y Audit Pro UI initialized');
     updateWCAGDescription();
+    // Request saved settings from plugin (figma.clientStorage -> code.ts)
+    try { loadSettings(); } catch (e) { /* ignore if unavailable */ }
     restoreCollapsibleState();
     restoreOverlayState();
   </script>
