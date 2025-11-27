@@ -1,763 +1,638 @@
-// code.ts - A11y Audit Pro - Optimized v3
-figma.showUI(__html__, { width: 380, height: 750, themeColors: true });
+// code.ts - A11y Audit Pro - v2.0 with Razorpay Integration
+figma.showUI(__html__, { width: 400, height: 720, themeColors: true });
 
 // ============================================
-// CONSTANTS & TYPES
+// TYPES & CONSTANTS
 // ============================================
 
-const PLUGIN_VERSION = '1.0.0';
-const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000;
-const PLUGIN_DATA_KEY = 'a11y-analysis';
+const SETTINGS_KEY = 'a11y-settings';
 const HISTORY_KEY = 'a11y-history';
-const SETTINGS_KEY = 'settings';
+const LICENSE_KEY = 'a11y-license';
+const USER_KEY = 'a11y-user';
 
-interface CachedAnalysis {
-  timestamp: number;
-  version: string;
-  contentHash: string;
-  results: AccessibilityIssue[];
-}
+// Pricing Configuration
+const PRICING = {
+  pro_monthly: { amount: 500, currency: 'INR', name: 'Pro Monthly', usd: 6 },
+  pro_annual: { amount: 5000, currency: 'INR', name: 'Pro Annual', usd: 60 },
+  team_monthly: { amount: 1850, currency: 'INR', name: 'Team Monthly (5 seats)', usd: 22 },
+  team_annual: { amount: 18500, currency: 'INR', name: 'Team Annual (5 seats)', usd: 220 }
+};
 
-interface AccessibilityIssue {
+// Free tier limits
+const FREE_LIMITS = {
+  analysesPerMonth: 10,
+  historyItems: 5
+};
+
+interface Issue {
+  id: string;
   elementId: string;
   elementName: string;
-  issueType: string;
+  type: string;
   severity: 'fail' | 'warning';
-  wcagLevel: 'AA' | 'AAA';
-  currentValue: string;
-  requiredValue: string;
-  suggestion: string;
-  suggestedFix: any;
-  bounds?: { x: number; y: number; width: number; height: number };
+  current: string;
+  required: string;
+  fix?: any;
+  bounds?: { x: number; y: number; w: number; h: number };
 }
 
-interface UserSettings {
-  wcag: { version: '2.0' | '2.1' | '2.2'; level: 'AA' | 'AAA' };
-  checks: {
-    colorContrast: boolean;
-    textSpacing: boolean;
-    lineHeight: boolean;
-    paragraphSpacing: boolean;
-    nonTextContrast: boolean;
-  };
-  display: {
-    showOverlays: boolean;
-    groupByElement: boolean;
-    showOnlyFailures: boolean;
-    overlayOpacity: number;
-  };
-  cache: { ttlDays: number };
+interface UserLicense {
+  oderId: string;
+  email: string;
+  plan: 'free' | 'pro' | 'team';
+  status: 'active' | 'expired' | 'cancelled';
+  subscriptionId?: string;
+  teamId?: string;
+  teamRole?: 'admin' | 'member';
+  currentPeriodEnd?: number;
+  analysesThisMonth: number;
+  lastAnalysisReset: number;
 }
 
-interface AnalysisHistoryItem {
-  id: string;
-  frameId: string;
-  frameName: string;
-  analyzedAt: number;
-  issueCount: number;
-  failCount: number;
-  warnCount: number;
-  issues: AccessibilityIssue[];
+interface TeamData {
+  teamId: string;
+  teamName: string;
+  adminEmail: string;
+  seats: number;
+  members: { email: string; oderId: string; role: 'admin' | 'member'; joinedAt: number }[];
 }
 
 // ============================================
 // STATE
 // ============================================
 
-const analysisCache = new Map<string, CachedAnalysis>();
-let analysisHistory: AnalysisHistoryItem[] = [];
 let selectedFrame: FrameNode | null = null;
-let currentIssues: AccessibilityIssue[] = [];
-let overlayFrame: FrameNode | null = null;
+let currentIssues: Issue[] = [];
+let overlayId: string | null = null;
+let showOverlays = true;
+let userLicense: UserLicense | null = null;
 
 // ============================================
-// CACHE FUNCTIONS
+// LICENSE MANAGEMENT
 // ============================================
 
-function getCachedAnalysis(frame: FrameNode): CachedAnalysis | null {
-  let cached = analysisCache.get(frame.id);
+async function initializeLicense(): Promise<UserLicense> {
+  const stored = await figma.clientStorage.getAsync(LICENSE_KEY);
+  
+  if (stored) {
+    userLicense = JSON.parse(stored);
+    
+    // Check if we need to reset monthly counter
+    const now = Date.now();
+    const lastReset = userLicense!.lastAnalysisReset || 0;
+    const daysSinceReset = (now - lastReset) / (1000 * 60 * 60 * 24);
+    
+    if (daysSinceReset >= 30) {
+      userLicense!.analysesThisMonth = 0;
+      userLicense!.lastAnalysisReset = now;
+      await saveLicense();
+    }
+    
+    return userLicense!;
+  }
+  
+  // Create new free user
+  userLicense = {
+    oderId: generateUserId(),
+    email: '',
+    plan: 'free',
+    status: 'active',
+    analysesThisMonth: 0,
+    lastAnalysisReset: Date.now()
+  };
+  
+  await saveLicense();
+  return userLicense;
+}
 
-  if (!cached) {
-    const pluginData = frame.getPluginData(PLUGIN_DATA_KEY);
-    if (pluginData) {
-      try {
-        cached = JSON.parse(pluginData);
-        if (cached) analysisCache.set(frame.id, cached);
-      } catch { return null; }
+async function saveLicense(): Promise<void> {
+  if (userLicense) {
+    await figma.clientStorage.setAsync(LICENSE_KEY, JSON.stringify(userLicense));
+  }
+}
+
+async function upgradeLicense(plan: 'pro' | 'team', subscriptionId: string, email: string): Promise<void> {
+  if (!userLicense) await initializeLicense();
+  
+  userLicense!.plan = plan;
+  userLicense!.status = 'active';
+  userLicense!.subscriptionId = subscriptionId;
+  userLicense!.email = email;
+  userLicense!.currentPeriodEnd = Date.now() + (30 * 24 * 60 * 60 * 1000); // 30 days
+  
+  await saveLicense();
+  
+  figma.ui.postMessage({ 
+    type: 'license-updated', 
+    license: userLicense 
+  });
+  
+  figma.notify(`🎉 Upgraded to ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan!`);
+}
+
+function canAnalyze(): { allowed: boolean; reason?: string } {
+  if (!userLicense) {
+    return { allowed: false, reason: 'License not initialized' };
+  }
+  
+  if (userLicense.plan === 'free') {
+    if (userLicense.analysesThisMonth >= FREE_LIMITS.analysesPerMonth) {
+      return { 
+        allowed: false, 
+        reason: `Free limit reached (${FREE_LIMITS.analysesPerMonth}/month). Upgrade to Pro for unlimited analyses.`
+      };
     }
   }
-
-  if (!cached) return null;
   
-  if (isCacheValid(frame, cached)) return cached;
+  if (userLicense.status !== 'active') {
+    return { allowed: false, reason: 'Subscription expired. Please renew.' };
+  }
   
-  clearFrameCache(frame);
-  return null;
+  return { allowed: true };
 }
 
-function setCachedAnalysis(frame: FrameNode, results: AccessibilityIssue[]): void {
-  const cached: CachedAnalysis = {
-    timestamp: Date.now(),
-    version: PLUGIN_VERSION,
-    contentHash: generateContentHash(frame),
-    results
-  };
-  analysisCache.set(frame.id, cached);
-  try { frame.setPluginData(PLUGIN_DATA_KEY, JSON.stringify(cached)); } catch {}
-}
-
-function isCacheValid(frame: FrameNode, cached: CachedAnalysis): boolean {
-  if (Date.now() - cached.timestamp > CACHE_DURATION) return false;
-  if (cached.version !== PLUGIN_VERSION) return false;
-  return generateContentHash(frame) === cached.contentHash;
-}
-
-function clearFrameCache(frame: FrameNode): void {
-  analysisCache.delete(frame.id);
-  frame.setPluginData(PLUGIN_DATA_KEY, '');
-}
-
-function clearAllCaches(): void {
-  analysisCache.clear();
-  const allFrames = figma.currentPage.findAll(n => n.type === 'FRAME') as FrameNode[];
-  allFrames.forEach(f => { if (f.getPluginData(PLUGIN_DATA_KEY)) f.setPluginData(PLUGIN_DATA_KEY, ''); });
-  figma.notify('✓ All saved data cleared');
-}
-
-function generateContentHash(frame: FrameNode): string {
-  const texts: string[] = [];
-  const colors: string[] = [];
+async function recordAnalysis(): Promise<void> {
+  if (!userLicense) return;
   
-  function walk(n: SceneNode) {
-    if (n.type === 'TEXT') {
-      texts.push(n.characters);
-      const fills = n.fills;
-      if (Array.isArray(fills)) {
-        fills.forEach(f => { if (f.type === 'SOLID') colors.push(`${f.color.r},${f.color.g},${f.color.b}`); });
-      }
+  userLicense.analysesThisMonth++;
+  await saveLicense();
+  
+  figma.ui.postMessage({
+    type: 'usage-updated',
+    usage: {
+      used: userLicense.analysesThisMonth,
+      limit: userLicense.plan === 'free' ? FREE_LIMITS.analysesPerMonth : 'unlimited'
     }
-    if ('children' in n) n.children.forEach(walk);
-  }
-  walk(frame);
+  });
+}
+
+function generateUserId(): string {
+  return 'user_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+}
+
+// ============================================
+// INIT
+// ============================================
+
+(async () => {
+  // Initialize license
+  await initializeLicense();
   
-  let hash = 0;
-  const str = JSON.stringify({ c: frame.children.length, t: texts, co: colors });
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i);
-    hash = hash & hash;
-  }
-  return Math.abs(hash).toString(36);
-}
-
-function getCacheAge(timestamp: number): string {
-  const ms = Date.now() - timestamp;
-  const mins = Math.floor(ms / 60000);
-  const hrs = Math.floor(mins / 60);
-  const days = Math.floor(hrs / 24);
-  if (days > 0) return `${days}d ago`;
-  if (hrs > 0) return `${hrs}h ago`;
-  if (mins > 0) return `${mins}m ago`;
-  return 'just now';
-}
-
-// ============================================
-// HISTORY FUNCTIONS
-// ============================================
-
-function loadHistoryData(): AnalysisHistoryItem[] {
-  try {
-    const data = figma.root.getPluginData(HISTORY_KEY);
-    if (data) { analysisHistory = JSON.parse(data); return analysisHistory; }
-  } catch {}
-  return [];
-}
-
-function saveToHistory(frame: FrameNode, issues: AccessibilityIssue[]): void {
-  if (!frame?.id || !frame?.name) return;
+  // Send license info to UI
+  figma.ui.postMessage({ 
+    type: 'init', 
+    license: userLicense,
+    pricing: PRICING,
+    freeLimits: FREE_LIMITS
+  });
   
-  const item: AnalysisHistoryItem = {
-    id: `${frame.id}-${Date.now()}`,
-    frameId: frame.id,
-    frameName: frame.name,
-    analyzedAt: Date.now(),
-    issueCount: issues.length,
-    failCount: issues.filter(i => i.severity === 'fail').length,
-    warnCount: issues.filter(i => i.severity === 'warning').length,
-    issues
-  };
-
-  loadHistoryData();
-  analysisHistory.unshift(item);
-  if (analysisHistory.length > 50) analysisHistory = analysisHistory.slice(0, 50);
-  try { figma.root.setPluginData(HISTORY_KEY, JSON.stringify(analysisHistory)); } catch {}
-}
-
-function clearHistory(): void {
-  analysisHistory = [];
-  figma.root.setPluginData(HISTORY_KEY, '');
-  figma.notify('✓ History cleared');
-}
+  // Check for selected frame
+  setTimeout(() => {
+    const sel = figma.currentPage.selection;
+    if (sel.length === 1 && sel[0].type === 'FRAME') {
+      selectedFrame = sel[0] as FrameNode;
+      figma.ui.postMessage({ type: 'frame-selected', name: selectedFrame.name });
+    }
+  }, 50);
+})();
 
 // ============================================
-// SETTINGS
-// ============================================
-
-function loadSettings(): UserSettings {
-  try {
-    const stored = figma.root.getPluginData(SETTINGS_KEY);
-    if (stored) return JSON.parse(stored);
-  } catch {}
-  return getDefaultSettings();
-}
-
-function saveSettings(settings: UserSettings): void {
-  try { figma.root.setPluginData(SETTINGS_KEY, JSON.stringify(settings)); } catch {}
-}
-
-function getDefaultSettings(): UserSettings {
-  return {
-    wcag: { version: '2.1', level: 'AA' },
-    checks: { colorContrast: true, textSpacing: true, lineHeight: true, paragraphSpacing: true, nonTextContrast: true },
-    display: { showOverlays: true, groupByElement: true, showOnlyFailures: false, overlayOpacity: 70 },
-    cache: { ttlDays: 7 }
-  };
-}
-
-// ============================================
-// SELECTION HANDLER
+// SELECTION
 // ============================================
 
 figma.on('selectionchange', () => {
-  const selection = figma.currentPage.selection;
-
-  if (selection.length === 0) {
-    figma.ui.postMessage({ type: 'frame-deselected' });
+  const sel = figma.currentPage.selection;
+  
+  if (sel.length !== 1 || sel[0].type !== 'FRAME') {
     selectedFrame = null;
-  } else if (selection.length > 1) {
-    figma.ui.postMessage({ type: 'selection-error', message: 'Please select only one frame' });
-    selectedFrame = null;
-  } else if (selection[0].type === 'FRAME') {
-    selectedFrame = selection[0] as FrameNode;
-    const cached = getCachedAnalysis(selectedFrame);
-    
-    figma.ui.postMessage({ 
-      type: 'frame-selected', 
-      frameName: selectedFrame.name,
-      frameId: selectedFrame.id,
-      hasCache: !!cached
-    });
-    
-    if (cached) {
-      currentIssues = cached.results;
-      figma.ui.postMessage({
-        type: 'analysis-complete',
-        issues: groupIssuesByElement(cached.results),
-        totalIssues: cached.results.length,
-        fromCache: true,
-        cacheAge: getCacheAge(cached.timestamp)
-      });
-    }
-  } else {
-    figma.ui.postMessage({ type: 'selection-error', message: 'Please select a frame' });
-    selectedFrame = null;
+    figma.ui.postMessage({ type: 'no-frame' });
+    return;
   }
+  
+  selectedFrame = sel[0] as FrameNode;
+  figma.ui.postMessage({ type: 'frame-selected', name: selectedFrame.name });
 });
-
-// Initial check
-setTimeout(() => {
-  const selection = figma.currentPage.selection;
-  if (selection.length === 1 && selection[0].type === 'FRAME') {
-    selectedFrame = selection[0] as FrameNode;
-    const cached = getCachedAnalysis(selectedFrame);
-    figma.ui.postMessage({ 
-      type: 'frame-selected', 
-      frameName: selectedFrame.name,
-      frameId: selectedFrame.id,
-      hasCache: !!cached
-    });
-  }
-}, 100);
 
 // ============================================
 // MESSAGE HANDLER
 // ============================================
 
 figma.ui.onmessage = async (msg) => {
-  switch (msg.type) {
-    case 'get-settings':
-      figma.ui.postMessage({ type: 'settings-loaded', settings: loadSettings() });
-      break;
+  
+  // ========== ANALYSIS ==========
+  if (msg.type === 'analyze') {
+    if (!selectedFrame) {
+      figma.notify('Select a frame first');
+      return;
+    }
     
-    case 'save-settings':
-      saveSettings(msg.settings);
-      figma.ui.postMessage({ type: 'settings-saved' });
-      figma.notify('✓ Settings saved');
-      break;
+    // Check if user can analyze
+    const canDo = canAnalyze();
+    if (!canDo.allowed) {
+      figma.notify(canDo.reason || 'Cannot analyze');
+      figma.ui.postMessage({ type: 'upgrade-required', reason: canDo.reason });
+      return;
+    }
     
-    case 'analyze':
-    case 'analyze-frame':
-      if (!selectedFrame) {
-        figma.ui.postMessage({ type: 'analysis-error', message: 'Please select a frame first' });
-        return;
+    const checks = msg.checks || {
+      colorContrast: true,
+      textSpacing: true,
+      lineHeight: true,
+      paragraphSpacing: true,
+      nonTextContrast: true
+    };
+    
+    showOverlays = msg.showOverlay !== false;
+    
+    currentIssues = [];
+    removeOverlay();
+    
+    figma.ui.postMessage({ type: 'started' });
+    
+    // Collect text nodes (max 300)
+    const textNodes: TextNode[] = [];
+    let count = 0;
+    
+    function collect(node: SceneNode) {
+      if (count > 300) return;
+      if (node.type === 'TEXT') {
+        textNodes.push(node);
+        count++;
       }
-      
-      try {
-        const checks = msg.checks || loadSettings().checks;
-        const showOverlay = msg.showOverlay !== false;
-        
-        currentIssues = [];
-        clearOverlays();
-        
-        figma.ui.postMessage({ type: 'analysis-started' });
-        
-        // OPTIMIZED: Collect all nodes first, then process
-        const textNodes: TextNode[] = [];
-        const shapeNodes: SceneNode[] = [];
-        
-        function collectNodes(node: SceneNode) {
-          if (node.type === 'TEXT') textNodes.push(node);
-          else if (node.type === 'RECTANGLE' || node.type === 'ELLIPSE' || node.type === 'VECTOR') shapeNodes.push(node);
-          if ('children' in node) node.children.forEach(collectNodes);
+      if ('children' in node) {
+        for (const c of node.children) {
+          if (count > 300) break;
+          collect(c);
         }
-        collectNodes(selectedFrame);
-        
-        const total = textNodes.length + (checks.nonTextContrast ? shapeNodes.length : 0);
-        let processed = 0;
-        
-        // Process text nodes
-        for (const node of textNodes) {
-          if (checks.colorContrast) checkTextContrast(node);
-          if (checks.textSpacing) checkTextSpacing(node);
-          if (checks.lineHeight) checkLineHeight(node);
-          if (checks.paragraphSpacing) checkParagraphSpacing(node);
-          
-          processed++;
-          if (processed % 20 === 0 || processed === total) {
-            figma.ui.postMessage({
-              type: 'analysis-progress',
-              progress: Math.round((processed / total) * 100),
-              current: processed,
-              total
-            });
-          }
-        }
-        
-        // Process shapes
-        if (checks.nonTextContrast) {
-          for (const node of shapeNodes) {
-            checkNonTextContrast(node);
-            processed++;
-            if (processed % 20 === 0 || processed === total) {
-              figma.ui.postMessage({
-                type: 'analysis-progress',
-                progress: Math.round((processed / total) * 100),
-                current: processed,
-                total
-              });
-            }
-          }
-        }
-        
-        setCachedAnalysis(selectedFrame, currentIssues);
-        saveToHistory(selectedFrame, currentIssues);
-        
-        figma.ui.postMessage({
-          type: 'analysis-complete',
-          issues: groupIssuesByElement(currentIssues),
-          totalIssues: currentIssues.length,
-          fromCache: false
-        });
-        
-        if (currentIssues.length > 0 && showOverlay) {
-          await createOverlayFrame(selectedFrame, currentIssues);
-        }
-        
-        figma.notify(`✓ ${currentIssues.length} issues found`);
-      } catch (error) {
-        figma.ui.postMessage({ type: 'analysis-error', message: 'Analysis failed' });
       }
-      break;
+    }
+    collect(selectedFrame);
     
-    case 'get-history':
-      figma.ui.postMessage({ type: 'history-loaded', analyses: loadHistoryData() });
-      break;
+    // Analyze
+    for (const node of textNodes) {
+      if (checks.colorContrast) analyzeContrast(node);
+      if (checks.textSpacing) analyzeSpacing(node);
+      if (checks.lineHeight) analyzeLineHeight(node);
+      if (checks.paragraphSpacing) analyzeParagraphSpacing(node);
+    }
     
-    case 'clear-history':
-      clearHistory();
-      figma.ui.postMessage({ type: 'history-cleared' });
-      break;
+    // Limit to 50 issues
+    if (currentIssues.length > 50) {
+      currentIssues = currentIssues.slice(0, 50);
+    }
     
-    case 'clear-all-cache':
-      clearAllCaches();
-      figma.ui.postMessage({ type: 'cache-cleared' });
-      break;
+    // Record this analysis for usage tracking
+    await recordAnalysis();
     
-    case 'clear-cache':
-      if (selectedFrame) {
-        clearFrameCache(selectedFrame);
-        figma.ui.postMessage({ type: 'cache-cleared' });
-        figma.notify('✓ Frame data cleared');
-      }
-      break;
+    // Save to history
+    await saveToHistory(selectedFrame.name, currentIssues.length);
     
-    case 'apply-fix':
-      if (msg.issueIndex !== undefined && currentIssues[msg.issueIndex]) {
-        await applyFix(msg.issueIndex, currentIssues[msg.issueIndex].suggestedFix);
-      }
-      break;
+    figma.ui.postMessage({ type: 'results', issues: currentIssues, count: currentIssues.length });
     
-    case 'toggle-overlay':
-      if (msg.show === false) {
-        clearOverlays();
-      } else if (msg.show === true && selectedFrame && currentIssues.length > 0) {
-        await createOverlayFrame(selectedFrame, currentIssues);
-      }
-      break;
+    if (showOverlays && currentIssues.length > 0) {
+      createOverlay();
+    }
     
-    case 'clear-overlays':
-      clearOverlays();
-      break;
+    figma.notify(`Found ${currentIssues.length} issues`);
+  }
+  
+  // ========== OVERLAY TOGGLE ==========
+  if (msg.type === 'toggle-overlay') {
+    showOverlays = msg.show === true;
     
-    case 'jump-to-element':
-      const node = figma.getNodeById(msg.elementId);
-      if (node) {
-        figma.currentPage.selection = [node as SceneNode];
-        figma.viewport.scrollAndZoomIntoView([node as SceneNode]);
-      }
-      break;
-    
-    case 'select-frame':
-      const frameNode = figma.getNodeById(msg.frameId);
-      if (frameNode?.type === 'FRAME') {
-        figma.currentPage.selection = [frameNode];
-        figma.viewport.scrollAndZoomIntoView([frameNode]);
-      }
-      break;
+    if (!showOverlays) {
+      removeOverlay();
+    } else if (currentIssues.length > 0 && selectedFrame) {
+      createOverlay();
+    }
+  }
+  
+  // ========== APPLY FIX ==========
+  if (msg.type === 'apply-fix') {
+    const issue = currentIssues[msg.index];
+    if (issue && issue.fix) {
+      await applyFix(issue);
+    }
+  }
+  
+  // ========== JUMP TO ELEMENT ==========
+  if (msg.type === 'jump') {
+    const node = figma.getNodeById(msg.id);
+    if (node) {
+      figma.currentPage.selection = [node as SceneNode];
+      figma.viewport.scrollAndZoomIntoView([node as SceneNode]);
+    }
+  }
+  
+  // ========== SETTINGS ==========
+  if (msg.type === 'get-settings') {
+    const data = figma.root.getPluginData(SETTINGS_KEY);
+    figma.ui.postMessage({ type: 'settings', data: data ? JSON.parse(data) : null });
+  }
+  
+  if (msg.type === 'save-settings') {
+    figma.root.setPluginData(SETTINGS_KEY, JSON.stringify(msg.settings));
+    figma.notify('Settings saved');
+  }
+  
+  // ========== HISTORY ==========
+  if (msg.type === 'get-history') {
+    const data = figma.root.getPluginData(HISTORY_KEY);
+    figma.ui.postMessage({ type: 'history', data: data ? JSON.parse(data) : [] });
+  }
+  
+  if (msg.type === 'clear-history') {
+    figma.root.setPluginData(HISTORY_KEY, '');
+    figma.notify('History cleared');
+  }
+  
+  // ========== LICENSE / PAYMENT ==========
+  if (msg.type === 'get-license') {
+    figma.ui.postMessage({ type: 'license', data: userLicense });
+  }
+  
+  if (msg.type === 'payment-success') {
+    // Called when Razorpay payment completes successfully
+    await upgradeLicense(msg.plan, msg.subscriptionId, msg.email);
+  }
+  
+  if (msg.type === 'update-email') {
+    if (userLicense) {
+      userLicense.email = msg.email;
+      await saveLicense();
+    }
+  }
+  
+  // ========== OPEN EXTERNAL URL ==========
+  if (msg.type === 'open-url') {
+    // Figma plugins can't directly open URLs, but we can notify the user
+    figma.notify('Opening payment page...');
   }
 };
 
 // ============================================
-// ANALYSIS FUNCTIONS (OPTIMIZED - NO FONT LOADING)
+// HISTORY MANAGEMENT
 // ============================================
 
-function checkTextContrast(textNode: TextNode): void {
-  try {
-    const fontName = textNode.fontName;
-    if (fontName === figma.mixed) return;
-    
-    const fontSize = textNode.fontSize as number;
-    if (typeof fontSize !== 'number') return;
-    
-    const bgColor = getBackgroundColor(textNode);
-    const textColor = getTextColor(textNode);
-    if (!bgColor || !textColor) return;
-
-    const ratio = getContrastRatio(textColor, bgColor);
-    
-    let fontWeight = 400;
-    if (fontName && typeof fontName === 'object' && 'style' in fontName) {
-      const style = fontName.style.toLowerCase();
-      if (style.includes('black') || style.includes('heavy')) fontWeight = 900;
-      else if (style.includes('bold')) fontWeight = 700;
-      else if (style.includes('semibold')) fontWeight = 600;
-      else if (style.includes('medium')) fontWeight = 500;
-    }
-    
-    const isLarge = fontSize >= 18 || (fontSize >= 14 && fontWeight >= 700);
-    const aaReq = isLarge ? 3.0 : 4.5;
-    const aaaReq = isLarge ? 4.5 : 7.0;
-    const bounds = textNode.absoluteBoundingBox;
-
-    if (ratio < aaReq) {
-      currentIssues.push({
-        elementId: textNode.id,
-        elementName: textNode.name,
-        issueType: 'Color Contrast',
-        severity: 'fail',
-        wcagLevel: 'AA',
-        currentValue: `${ratio.toFixed(2)}:1`,
-        requiredValue: `${aaReq}:1`,
-        suggestion: `Increase contrast to ${aaReq}:1`,
-        suggestedFix: { type: 'textColor', value: calculateBetterColor(textColor, bgColor, aaReq) },
-        bounds: bounds ? { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height } : undefined
-      });
-    } else if (ratio < aaaReq) {
-      currentIssues.push({
-        elementId: textNode.id,
-        elementName: textNode.name,
-        issueType: 'Color Contrast',
-        severity: 'warning',
-        wcagLevel: 'AAA',
-        currentValue: `${ratio.toFixed(2)}:1`,
-        requiredValue: `${aaaReq}:1`,
-        suggestion: `Increase contrast to ${aaaReq}:1 for AAA`,
-        suggestedFix: { type: 'textColor', value: calculateBetterColor(textColor, bgColor, aaaReq) },
-        bounds: bounds ? { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height } : undefined
-      });
-    }
-  } catch {}
+async function saveToHistory(frameName: string, issueCount: number): Promise<void> {
+  const historyData = figma.root.getPluginData(HISTORY_KEY);
+  let history = historyData ? JSON.parse(historyData) : [];
+  
+  // Add new entry
+  history.unshift({
+    frameId: selectedFrame?.id || '',
+    frameName: frameName,
+    issueCount: issueCount,
+    analyzedAt: Date.now()
+  });
+  
+  // Limit history based on plan
+  const limit = userLicense?.plan === 'free' ? FREE_LIMITS.historyItems : 50;
+  if (history.length > limit) {
+    history = history.slice(0, limit);
+  }
+  
+  figma.root.setPluginData(HISTORY_KEY, JSON.stringify(history));
 }
 
-function checkTextSpacing(textNode: TextNode): void {
+// ============================================
+// ANALYSIS FUNCTIONS
+// ============================================
+
+function analyzeContrast(node: TextNode) {
   try {
-    const fontSize = textNode.fontSize as number;
+    if (node.fontName === figma.mixed) return;
+    const fontSize = node.fontSize as number;
     if (typeof fontSize !== 'number') return;
     
-    const letterSpacing = textNode.letterSpacing as LetterSpacing;
-    let current = 0;
-    if (letterSpacing.unit === 'PIXELS') current = letterSpacing.value;
-    else if (letterSpacing.unit === 'PERCENT') current = (letterSpacing.value / 100) * fontSize;
-
-    const required = fontSize * 0.12;
-    if (current < required) {
-      const bounds = textNode.absoluteBoundingBox;
+    const textColor = getColor(node.fills);
+    if (!textColor) return;
+    
+    const bgColor = findBgColor(node);
+    const ratio = contrastRatio(textColor, bgColor);
+    
+    const isLarge = fontSize >= 18;
+    const required = isLarge ? 3.0 : 4.5;
+    
+    if (ratio < required) {
+      const b = node.absoluteBoundingBox;
       currentIssues.push({
-        elementId: textNode.id,
-        elementName: textNode.name,
-        issueType: 'Text Spacing',
-        severity: 'fail',
-        wcagLevel: 'AA',
-        currentValue: `${current.toFixed(1)}px`,
-        requiredValue: `${required.toFixed(1)}px`,
-        suggestion: `Increase letter spacing`,
-        suggestedFix: { type: 'letterSpacing', value: required },
-        bounds: bounds ? { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height } : undefined
-      });
-    }
-  } catch {}
-}
-
-function checkLineHeight(textNode: TextNode): void {
-  try {
-    const fontSize = textNode.fontSize as number;
-    if (typeof fontSize !== 'number') return;
-    
-    const lineHeight = textNode.lineHeight as LineHeight;
-    let current = fontSize * 1.5;
-    if (lineHeight.unit === 'PIXELS') current = lineHeight.value;
-    else if (lineHeight.unit === 'PERCENT') current = (lineHeight.value / 100) * fontSize;
-
-    const required = fontSize * 1.5;
-    if (current < required) {
-      const bounds = textNode.absoluteBoundingBox;
-      currentIssues.push({
-        elementId: textNode.id,
-        elementName: textNode.name,
-        issueType: 'Line Height',
-        severity: 'fail',
-        wcagLevel: 'AA',
-        currentValue: `${current.toFixed(1)}px`,
-        requiredValue: `${required.toFixed(1)}px`,
-        suggestion: `Increase line height to 1.5x`,
-        suggestedFix: { type: 'lineHeight', value: required },
-        bounds: bounds ? { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height } : undefined
-      });
-    }
-  } catch {}
-}
-
-function checkParagraphSpacing(textNode: TextNode): void {
-  try {
-    const fontSize = textNode.fontSize as number;
-    if (typeof fontSize !== 'number') return;
-    
-    const spacing = textNode.paragraphSpacing;
-    const required = fontSize * 2.0;
-    
-    if (spacing < required) {
-      const bounds = textNode.absoluteBoundingBox;
-      currentIssues.push({
-        elementId: textNode.id,
-        elementName: textNode.name,
-        issueType: 'Paragraph Spacing',
-        severity: 'fail',
-        wcagLevel: 'AA',
-        currentValue: `${spacing.toFixed(1)}px`,
-        requiredValue: `${required.toFixed(1)}px`,
-        suggestion: `Increase paragraph spacing to 2x`,
-        suggestedFix: { type: 'paragraphSpacing', value: required },
-        bounds: bounds ? { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height } : undefined
-      });
-    }
-  } catch {}
-}
-
-function checkNonTextContrast(node: SceneNode): void {
-  try {
-    const fills = 'fills' in node ? node.fills : [];
-    if (!Array.isArray(fills) || fills.length === 0) return;
-    
-    const fill = fills[0];
-    if (fill.type !== 'SOLID') return;
-    
-    const bgColor = getBackgroundColor(node);
-    if (!bgColor) return;
-    
-    const ratio = getContrastRatio(fill.color, bgColor);
-    if (ratio < 3.0) {
-      const bounds = 'absoluteBoundingBox' in node ? node.absoluteBoundingBox : null;
-      currentIssues.push({
+        id: `${node.id}-contrast`,
         elementId: node.id,
-        elementName: node.name,
-        issueType: 'Non-text Contrast',
+        elementName: node.name || 'Text',
+        type: 'Color Contrast',
         severity: 'fail',
-        wcagLevel: 'AA',
-        currentValue: `${ratio.toFixed(2)}:1`,
-        requiredValue: `3.0:1`,
-        suggestion: `Increase contrast`,
-        suggestedFix: { type: 'fillColor', value: fill.color },
-        bounds: bounds ? { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height } : undefined
+        current: `${ratio.toFixed(1)}:1`,
+        required: `${required}:1`,
+        fix: { type: 'color', target: required, bg: bgColor },
+        bounds: b ? { x: b.x, y: b.y, w: b.width, h: b.height } : undefined
+      });
+    }
+  } catch {}
+}
+
+function analyzeSpacing(node: TextNode) {
+  try {
+    const fontSize = node.fontSize as number;
+    if (typeof fontSize !== 'number') return;
+    
+    const ls = node.letterSpacing as LetterSpacing;
+    let current = 0;
+    if (ls?.unit === 'PIXELS') current = ls.value;
+    else if (ls?.unit === 'PERCENT') current = (ls.value / 100) * fontSize;
+    
+    const required = fontSize * 0.12;
+    
+    if (current < required * 0.9) {
+      const b = node.absoluteBoundingBox;
+      currentIssues.push({
+        id: `${node.id}-spacing`,
+        elementId: node.id,
+        elementName: node.name || 'Text',
+        type: 'Text Spacing',
+        severity: 'fail',
+        current: `${current.toFixed(1)}px`,
+        required: `${required.toFixed(1)}px`,
+        fix: { type: 'letterSpacing', value: required },
+        bounds: b ? { x: b.x, y: b.y, w: b.width, h: b.height } : undefined
+      });
+    }
+  } catch {}
+}
+
+function analyzeLineHeight(node: TextNode) {
+  try {
+    const fontSize = node.fontSize as number;
+    if (typeof fontSize !== 'number') return;
+    
+    const lh = node.lineHeight as LineHeight;
+    let current = fontSize * 1.2;
+    if (lh?.unit === 'PIXELS') current = lh.value;
+    else if (lh?.unit === 'PERCENT') current = (lh.value / 100) * fontSize;
+    
+    const required = fontSize * 1.5;
+    
+    if (current < required * 0.9) {
+      const b = node.absoluteBoundingBox;
+      currentIssues.push({
+        id: `${node.id}-lineheight`,
+        elementId: node.id,
+        elementName: node.name || 'Text',
+        type: 'Line Height',
+        severity: 'fail',
+        current: `${current.toFixed(1)}px`,
+        required: `${required.toFixed(1)}px`,
+        fix: { type: 'lineHeight', value: required },
+        bounds: b ? { x: b.x, y: b.y, w: b.width, h: b.height } : undefined
+      });
+    }
+  } catch {}
+}
+
+function analyzeParagraphSpacing(node: TextNode) {
+  try {
+    const fontSize = node.fontSize as number;
+    if (typeof fontSize !== 'number') return;
+    
+    const current = node.paragraphSpacing || 0;
+    const required = fontSize * 2;
+    
+    if (current < required * 0.8) {
+      const b = node.absoluteBoundingBox;
+      currentIssues.push({
+        id: `${node.id}-paragraph`,
+        elementId: node.id,
+        elementName: node.name || 'Text',
+        type: 'Paragraph Spacing',
+        severity: 'fail',
+        current: `${current.toFixed(1)}px`,
+        required: `${required.toFixed(1)}px`,
+        fix: { type: 'paragraphSpacing', value: required },
+        bounds: b ? { x: b.x, y: b.y, w: b.width, h: b.height } : undefined
       });
     }
   } catch {}
 }
 
 // ============================================
-// OVERLAY FUNCTIONS
+// OVERLAY
 // ============================================
 
-async function createOverlayFrame(targetFrame: FrameNode, issues: AccessibilityIssue[]): Promise<void> {
-  const frameBounds = targetFrame.absoluteBoundingBox;
-  if (!frameBounds) return;
-
-  clearOverlays();
-
-  overlayFrame = figma.createFrame();
-  overlayFrame.name = '🔍 A11Y Overlay';
-  overlayFrame.resize(frameBounds.width, frameBounds.height);
-  overlayFrame.x = frameBounds.x;
-  overlayFrame.y = frameBounds.y;
-  overlayFrame.fills = [];
-  overlayFrame.locked = true;
-
-  if (targetFrame.parent && 'insertChild' in targetFrame.parent) {
-    const idx = targetFrame.parent.children.indexOf(targetFrame);
-    targetFrame.parent.insertChild(idx + 1, overlayFrame);
+function createOverlay() {
+  if (!selectedFrame) return;
+  
+  const fb = selectedFrame.absoluteBoundingBox;
+  if (!fb) return;
+  
+  removeOverlay();
+  
+  const frame = figma.createFrame();
+  frame.name = 'A11Y-Overlay';
+  frame.x = fb.x;
+  frame.y = fb.y;
+  frame.resize(fb.width, fb.height);
+  frame.fills = [];
+  frame.locked = true;
+  
+  overlayId = frame.id;
+  
+  if (selectedFrame.parent && 'insertChild' in selectedFrame.parent) {
+    const idx = selectedFrame.parent.children.indexOf(selectedFrame);
+    selectedFrame.parent.insertChild(idx + 1, frame);
   }
-
-  // Load font once for all labels
-  try { await figma.loadFontAsync({ family: 'Inter', style: 'Regular' }); } catch {}
-
-  for (const issue of issues) {
-    if (!issue.bounds || !overlayFrame) continue;
+  
+  for (const issue of currentIssues) {
+    if (!issue.bounds) continue;
     
-    try {
-      const box = figma.createRectangle();
-      box.name = `Issue: ${issue.issueType}`;
-      box.x = issue.bounds.x - frameBounds.x;
-      box.y = issue.bounds.y - frameBounds.y;
-      box.resize(issue.bounds.width, issue.bounds.height);
-
-      const color = issue.severity === 'fail' ? { r: 0.95, g: 0.26, b: 0.21 } : { r: 1, g: 0.76, b: 0.03 };
-      box.fills = [];
-      box.strokes = [{ type: 'SOLID', color }];
-      box.strokeWeight = 1;
-      box.dashPattern = [8, 4];
-      box.opacity = 0.9;
-      overlayFrame.appendChild(box);
-
-      try {
-        const label = figma.createText();
-        label.characters = issue.severity === 'fail' ? '✕' : '⚠';
-        label.fontSize = 14;
-        label.fills = [{ type: 'SOLID', color }];
-        label.x = box.x - 10;
-        label.y = box.y - 18;
-        overlayFrame.appendChild(label);
-      } catch {}
-    } catch {}
+    const rect = figma.createRectangle();
+    rect.x = issue.bounds.x - fb.x;
+    rect.y = issue.bounds.y - fb.y;
+    rect.resize(Math.max(issue.bounds.w, 2), Math.max(issue.bounds.h, 2));
+    rect.fills = [];
+    rect.strokes = [{
+      type: 'SOLID',
+      color: issue.severity === 'fail' 
+        ? { r: 1, g: 0.2, b: 0.2 }
+        : { r: 1, g: 0.8, b: 0 }
+    }];
+    rect.strokeWeight = 2;
+    rect.dashPattern = [4, 4];
+    
+    frame.appendChild(rect);
   }
 }
 
-function clearOverlays(): void {
-  try {
-    if (overlayFrame) { overlayFrame.remove(); overlayFrame = null; }
-    figma.currentPage.findAll(n => n.name === '🔍 A11Y Overlay').forEach(n => { try { n.remove(); } catch {} });
-  } catch {}
+function removeOverlay() {
+  if (overlayId) {
+    try {
+      const node = figma.getNodeById(overlayId);
+      if (node) node.remove();
+    } catch {}
+    overlayId = null;
+  }
 }
 
 // ============================================
-// HELPER FUNCTIONS
+// HELPERS
 // ============================================
 
-function getTextColor(node: TextNode): RGB | null {
-  const fills = node.fills;
-  if (Array.isArray(fills) && fills.length > 0 && fills[0].type === 'SOLID') return fills[0].color;
+function getColor(fills: readonly Paint[] | typeof figma.mixed): RGB | null {
+  if (Array.isArray(fills) && fills[0]?.type === 'SOLID') {
+    return fills[0].color;
+  }
   return null;
 }
 
-function getBackgroundColor(node: SceneNode): RGB | null {
+function findBgColor(node: SceneNode): RGB {
   let parent = node.parent;
-  while (parent) {
+  for (let i = 0; i < 8; i++) {
+    if (!parent) break;
     if ('fills' in parent) {
-      const fills = parent.fills;
-      if (Array.isArray(fills) && fills.length > 0 && fills[0].type === 'SOLID') return fills[0].color;
+      const c = getColor(parent.fills as readonly Paint[]);
+      if (c) return c;
     }
     parent = parent.parent;
   }
   return { r: 1, g: 1, b: 1 };
 }
 
-function getContrastRatio(c1: RGB, c2: RGB): number {
-  const l1 = getLuminance(c1);
-  const l2 = getLuminance(c2);
-  return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
-}
-
-function getLuminance(c: RGB): number {
+function luminance(c: RGB): number {
   const r = c.r <= 0.03928 ? c.r / 12.92 : Math.pow((c.r + 0.055) / 1.055, 2.4);
   const g = c.g <= 0.03928 ? c.g / 12.92 : Math.pow((c.g + 0.055) / 1.055, 2.4);
   const b = c.b <= 0.03928 ? c.b / 12.92 : Math.pow((c.b + 0.055) / 1.055, 2.4);
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
-function calculateBetterColor(textColor: RGB, bgColor: RGB, target: number): RGB {
-  const bgLum = getLuminance(bgColor);
-  const step = getLuminance(textColor) > bgLum ? 0.05 : -0.05;
-  let c = { ...textColor };
-  
-  for (let i = 0; i < 20; i++) {
-    c.r = Math.max(0, Math.min(1, c.r + step));
-    c.g = Math.max(0, Math.min(1, c.g + step));
-    c.b = Math.max(0, Math.min(1, c.b + step));
-    if (getContrastRatio(c, bgColor) >= target) return c;
-  }
-  return c;
+function contrastRatio(c1: RGB, c2: RGB): number {
+  const l1 = luminance(c1);
+  const l2 = luminance(c2);
+  return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
 }
 
-function groupIssuesByElement(issues: AccessibilityIssue[]): any[] {
-  const grouped: { [key: string]: any[] } = {};
-  issues.forEach((issue, idx) => {
-    const key = `${issue.elementName}_${issue.elementId}`;
-    if (!grouped[key]) grouped[key] = [];
-    grouped[key].push({ ...issue, index: idx });
-  });
-  return Object.entries(grouped).map(([_, issues]) => ({
-    elementName: issues[0].elementName,
-    elementId: issues[0].elementId,
-    issues
-  }));
-}
-
-async function applyFix(issueIndex: number, fix: any): Promise<void> {
-  const issue = currentIssues[issueIndex];
+async function applyFix(issue: Issue) {
   const node = figma.getNodeById(issue.elementId);
-  if (!node) { figma.ui.postMessage({ type: 'error', message: 'Element not found' }); return; }
-
+  if (!node || node.type !== 'TEXT') {
+    figma.notify('Element not found');
+    return;
+  }
+  
   try {
-    if (node.type === 'TEXT') {
-      await figma.loadFontAsync(node.fontName as FontName);
-      
-      if (fix.type === 'textColor') node.fills = [{ type: 'SOLID', color: fix.value }];
-      else if (fix.type === 'letterSpacing') node.letterSpacing = { value: fix.value, unit: 'PIXELS' };
-      else if (fix.type === 'lineHeight') node.lineHeight = { value: fix.value, unit: 'PIXELS' };
-      else if (fix.type === 'paragraphSpacing') node.paragraphSpacing = fix.value;
+    const fontName = node.fontName;
+    if (fontName !== figma.mixed) {
+      await figma.loadFontAsync(fontName as FontName);
     }
-
-    figma.ui.postMessage({ type: 'fix-applied', message: 'Fix applied!' });
-    figma.notify('✓ Fix applied!');
-    if (selectedFrame) clearFrameCache(selectedFrame);
+    
+    if (issue.fix.type === 'letterSpacing') {
+      node.letterSpacing = { value: issue.fix.value, unit: 'PIXELS' };
+    } else if (issue.fix.type === 'lineHeight') {
+      node.lineHeight = { value: issue.fix.value, unit: 'PIXELS' };
+    } else if (issue.fix.type === 'paragraphSpacing') {
+      node.paragraphSpacing = issue.fix.value;
+    }
+    
+    figma.notify('Fix applied!');
+    figma.ui.postMessage({ type: 'fixed', index: currentIssues.indexOf(issue) });
   } catch {
-    figma.ui.postMessage({ type: 'error', message: 'Failed to apply fix' });
+    figma.notify('Could not apply fix');
   }
 }

@@ -3,80 +3,373 @@
 <head>
   <meta charset="UTF-8">
   <title>A11y Audit Pro</title>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
+    /* ============================================
+       RESET & BASE STYLES
+       ============================================ */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
     :root {
-      --background: 0 0% 100%;
-      --foreground: 222.2 84% 4.9%;
-      --primary: 222.2 47.4% 11.2%;
-      --primary-foreground: 210 40% 98%;
-      --secondary: 210 40% 96.1%;
-      --secondary-foreground: 222.2 47.4% 11.2%;
-      --success: 142 71% 45%;
-      --success-foreground: 355.7 100% 97.3%;
-      --warning: 48 96% 53%;
-      --warning-foreground: 26 90% 10%;
-      --destructive: 0 84.2% 60.2%;
-      --destructive-foreground: 210 40% 98%;
-      --muted: 210 40% 96.1%;
-      --muted-foreground: 215.4 16.3% 46.9%;
-      --border: 214.3 31.8% 91.4%;
+      --background: #ffffff;
+      --foreground: #0f172a;
+      --card: #ffffff;
+      --card-foreground: #0f172a;
+      --primary: #0f172a;
+      --primary-foreground: #f8fafc;
+      --secondary: #f1f5f9;
+      --secondary-foreground: #0f172a;
+      --muted: #f1f5f9;
+      --muted-foreground: #64748b;
+      --accent: #f1f5f9;
+      --accent-foreground: #0f172a;
+      --destructive: #ef4444;
+      --destructive-foreground: #f8fafc;
+      --success: #22c55e;
+      --success-foreground: #f8fafc;
+      --warning: #f59e0b;
+      --warning-foreground: #0f172a;
+      --border: #e2e8f0;
+      --input: #e2e8f0;
+      --ring: #0f172a;
       --radius: 0.5rem;
+      --brand-primary: #2563eb;
+      --brand-primary-hover: #1d4ed8;
+      --brand-light: #eff6ff;
+      --brand-gradient: linear-gradient(135deg, #2563eb, #7c3aed);
     }
-
+    
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
-      font-size: 14px;
-      color: hsl(var(--foreground));
-      background: hsl(var(--background));
+      font-size: 13px;
+      color: var(--foreground);
+      background: var(--background);
       line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
     }
-
+    
     .container {
-      width: 100%;
-      max-width: 400px;
-      margin: 0 auto;
-      min-height: 100vh;
       display: flex;
       flex-direction: column;
+      height: 100vh;
     }
-
-    .hidden { display: none !important; }
-
-    /* Header */
+    
+    .icon {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      stroke-width: 1.5;
+      fill: none;
+    }
+    
+    .icon-sm { width: 16px; height: 16px; }
+    .icon-lg { width: 24px; height: 24px; }
+    
+    /* ============================================
+       HEADER
+       ============================================ */
     .header {
-      padding: 12px 16px;
-      border-bottom: 1px solid hsl(var(--border));
-      background: hsl(var(--background));
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      justify-content: space-between;
+      background: var(--background);
     }
-
-    .header-left { flex: 1; }
-
-    .header-title {
-      font-size: 16px;
-      font-weight: 600;
-      margin-bottom: 2px;
-    }
-
-    .header-subtitle {
-      font-size: 11px;
-      color: hsl(var(--muted-foreground));
-    }
-
-    .header-actions {
+    
+    .header-left {
       display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .logo {
+      width: 36px;
+      height: 36px;
+      background: var(--brand-gradient);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+    }
+    
+    .logo svg {
+      width: 20px;
+      height: 20px;
+      color: white;
+    }
+    
+    .header-title h1 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--foreground);
+    }
+    
+    .header-title p {
+      font-size: 11px;
+      color: var(--muted-foreground);
+    }
+    
+    .plan-badge {
+      padding: 5px 12px;
+      border-radius: 100px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    
+    .plan-badge.free {
+      background: var(--muted);
+      color: var(--muted-foreground);
+    }
+    
+    .plan-badge.pro {
+      background: var(--brand-gradient);
+      color: white;
+    }
+    
+    .plan-badge.team {
+      background: linear-gradient(135deg, #7c3aed, #db2777);
+      color: white;
+    }
+    
+    /* ============================================
+       USAGE BAR (Free Users)
+       ============================================ */
+    .usage-bar {
+      padding: 10px 16px;
+      background: #fef3c7;
+      border-bottom: 1px solid #fcd34d;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+    }
+    
+    .usage-bar.warning {
+      background: #fee2e2;
+      border-color: #fca5a5;
+    }
+    
+    .usage-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #92400e;
+    }
+    
+    .usage-bar.warning .usage-info {
+      color: #b91c1c;
+    }
+    
+    .usage-progress {
+      width: 100px;
+      height: 6px;
+      background: rgba(0,0,0,0.1);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    
+    .usage-progress-fill {
+      height: 100%;
+      background: #f59e0b;
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+    
+    .usage-bar.warning .usage-progress-fill {
+      background: #ef4444;
+    }
+    
+    .usage-upgrade {
+      font-weight: 600;
+      color: var(--brand-primary);
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    
+    /* ============================================
+       TABS
+       ============================================ */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: var(--muted);
+    }
+    
+    .tab {
+      flex: 1;
+      padding: 12px 16px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted-foreground);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      position: relative;
+    }
+    
+    .tab:hover {
+      color: var(--foreground);
+      background: rgba(0,0,0,0.02);
+    }
+    
+    .tab.active {
+      color: var(--foreground);
+      background: var(--background);
+    }
+    
+    .tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--brand-primary);
+    }
+    
+    .tab-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+    
+    .hidden { display: none !important; }
+    
+    /* ============================================
+       CARDS
+       ============================================ */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    
+    .card-header {
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--foreground);
+      display: flex;
+      align-items: center;
       gap: 8px;
     }
-
-    /* Buttons */
+    
+    .card-description {
+      font-size: 12px;
+      color: var(--muted-foreground);
+      margin-top: 2px;
+    }
+    
+    .card-content {
+      padding: 0 16px 16px;
+    }
+    
+    /* ============================================
+       FRAME INFO
+       ============================================ */
+    .frame-card {
+      background: var(--brand-light);
+      border: 1px solid #bfdbfe;
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .frame-icon-wrapper {
+      width: 44px;
+      height: 44px;
+      background: var(--brand-primary);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+    
+    .frame-info {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .frame-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--foreground);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .frame-status {
+      font-size: 12px;
+      color: var(--muted-foreground);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--success);
+    }
+    
+    .no-frame-card {
+      text-align: center;
+      padding: 32px 16px;
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+    }
+    
+    .no-frame-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--muted);
+      border-radius: 12px;
+      margin: 0 auto 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted-foreground);
+    }
+    
+    .no-frame-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--foreground);
+      margin-bottom: 4px;
+    }
+    
+    .no-frame-desc {
+      font-size: 12px;
+      color: var(--muted-foreground);
+    }
+    
+    /* ============================================
+       BUTTONS
+       ============================================ */
     .btn {
       display: inline-flex;
       align-items: center;
@@ -84,1317 +377,2052 @@
       gap: 8px;
       padding: 10px 16px;
       border-radius: var(--radius);
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 500;
       cursor: pointer;
-      transition: all 0.2s;
       border: none;
+      transition: all 0.15s ease;
       white-space: nowrap;
     }
-
+    
     .btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
     }
-
+    
     .btn-primary {
-      background: hsl(var(--primary));
-      color: hsl(var(--primary-foreground));
+      background: var(--brand-primary);
+      color: white;
+      width: 100%;
     }
-
+    
     .btn-primary:hover:not(:disabled) {
-      background: hsl(var(--primary) / 0.9);
+      background: var(--brand-primary-hover);
     }
-
+    
     .btn-secondary {
-      background: hsl(var(--secondary));
-      color: hsl(var(--secondary-foreground));
+      background: var(--secondary);
+      color: var(--secondary-foreground);
     }
-
-    .btn-secondary:hover:not(:disabled) {
-      background: hsl(var(--secondary) / 0.8);
+    
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--foreground);
     }
-
+    
+    .btn-outline:hover:not(:disabled) {
+      background: var(--muted);
+    }
+    
     .btn-ghost {
       background: transparent;
-      color: hsl(var(--foreground));
+      color: var(--foreground);
     }
-
+    
     .btn-ghost:hover:not(:disabled) {
-      background: hsl(var(--muted));
+      background: var(--muted);
     }
-
-    .btn-destructive {
-      background: hsl(var(--destructive));
-      color: hsl(var(--destructive-foreground));
+    
+    .btn-gradient {
+      background: var(--brand-gradient);
+      color: white;
+      width: 100%;
     }
-
-    .btn-sm { padding: 6px 12px; font-size: 12px; }
-    .btn-lg { padding: 12px 20px; font-size: 15px; }
-    .btn-full { width: 100%; }
-
-    /* Tabs */
-    .tabs {
-      display: flex;
-      border-bottom: 1px solid hsl(var(--border));
-      background: hsl(var(--background));
+    
+    .btn-gradient:hover:not(:disabled) {
+      opacity: 0.9;
+      transform: translateY(-1px);
     }
-
-    .tab-btn {
-      flex: 1;
-      padding: 12px 16px;
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 500;
-      color: hsl(var(--muted-foreground));
-      transition: all 0.2s;
-      border-bottom: 2px solid transparent;
-    }
-
-    .tab-btn:hover {
-      color: hsl(var(--foreground));
-      background: hsl(var(--muted));
-    }
-
-    .tab-btn.active {
-      color: hsl(var(--primary));
-      border-bottom-color: hsl(var(--primary));
-    }
-
-    .tab-content {
-      padding: 16px;
-      flex: 1;
-      overflow-y: auto;
-    }
-
-    /* Cards */
-    .card {
-      background: hsl(var(--background));
-      border: 1px solid hsl(var(--border));
-      border-radius: var(--radius);
-      overflow: hidden;
-      margin-bottom: 16px;
-    }
-
-    .card-header {
-      padding: 12px 16px;
-      border-bottom: 1px solid hsl(var(--border));
-    }
-
-    .card-title {
-      font-size: 15px;
-      font-weight: 600;
-      margin-bottom: 2px;
-    }
-
-    .card-description {
+    
+    .btn-sm {
+      padding: 6px 12px;
       font-size: 12px;
-      color: hsl(var(--muted-foreground));
     }
-
-    .card-content { padding: 16px; }
-
-    .card-footer {
-      padding: 12px 16px;
-      border-top: 1px solid hsl(var(--border));
+    
+    .btn-lg {
+      padding: 12px 20px;
+      font-size: 14px;
+    }
+    
+    /* ============================================
+       CHECKBOX & TOGGLE
+       ============================================ */
+    .checkbox-group {
       display: flex;
-      gap: 8px;
+      flex-direction: column;
+      gap: 2px;
     }
-
-    /* Badges */
+    
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: calc(var(--radius) - 2px);
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    
+    .checkbox-item:hover {
+      background: var(--muted);
+    }
+    
+    .checkbox-item input[type="checkbox"] {
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border);
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      flex-shrink: 0;
+    }
+    
+    .checkbox-item input[type="checkbox"]:checked {
+      background: var(--brand-primary);
+      border-color: var(--brand-primary);
+    }
+    
+    .checkbox-item input[type="checkbox"]:checked::after {
+      content: '';
+      width: 10px;
+      height: 10px;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E") center/contain no-repeat;
+    }
+    
+    .checkbox-label {
+      flex: 1;
+      font-size: 13px;
+      color: var(--foreground);
+    }
+    
+    .checkbox-desc {
+      font-size: 11px;
+      color: var(--muted-foreground);
+    }
+    
+    .toggle-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px;
+      border-radius: var(--radius);
+      background: var(--muted);
+      margin-top: 12px;
+    }
+    
+    .toggle-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--foreground);
+    }
+    
+    .toggle {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      cursor: pointer;
+    }
+    
+    .toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      background: var(--border);
+      border-radius: 12px;
+      transition: all 0.2s ease;
+    }
+    
+    .toggle-thumb {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      left: 2px;
+      top: 2px;
+      background: white;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .toggle input:checked + .toggle-track {
+      background: var(--brand-primary);
+    }
+    
+    .toggle input:checked ~ .toggle-thumb {
+      transform: translateX(20px);
+    }
+    
+    /* ============================================
+       BADGE
+       ============================================ */
     .badge {
       display: inline-flex;
       align-items: center;
+      gap: 4px;
       padding: 4px 10px;
-      border-radius: 12px;
+      border-radius: 100px;
       font-size: 11px;
       font-weight: 600;
+      white-space: nowrap;
     }
-
-    .badge-success { background: hsl(var(--success) / 0.1); color: hsl(var(--success)); }
-    .badge-warning { background: hsl(var(--warning) / 0.1); color: hsl(var(--warning-foreground)); }
-    .badge-destructive { background: hsl(var(--destructive) / 0.1); color: hsl(var(--destructive)); }
-    .badge-secondary { background: hsl(var(--secondary)); color: hsl(var(--secondary-foreground)); }
-
-    /* Form Elements */
-    .select, .input {
-      width: 100%;
-      padding: 8px 12px;
-      border: 1px solid hsl(var(--border));
-      border-radius: var(--radius);
-      font-size: 14px;
-      transition: all 0.2s;
+    
+    .badge-destructive {
+      background: #fef2f2;
+      color: #b91c1c;
     }
-
-    .select:focus, .input:focus {
-      outline: none;
-      border-color: hsl(var(--primary));
-      box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
+    
+    .badge-warning {
+      background: #fffbeb;
+      color: #92400e;
     }
-
-    .checkbox-wrapper {
+    
+    .badge-success {
+      background: #f0fdf4;
+      color: #166534;
+    }
+    
+    /* ============================================
+       PROGRESS BAR
+       ============================================ */
+    .progress-wrapper {
+      margin: 20px 0;
+    }
+    
+    .progress-bar {
+      height: 6px;
+      background: var(--muted);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: var(--brand-primary);
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+    
+    .progress-text {
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted-foreground);
+      margin-top: 8px;
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
-      cursor: pointer;
-      padding: 6px 0;
     }
-
-    .checkbox {
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
-    }
-
-    .slider {
-      width: 100%;
-      height: 6px;
-      border-radius: 3px;
-      background: hsl(var(--border));
-      outline: none;
-      appearance: none;
-      -webkit-appearance: none;
-    }
-
-    .slider::-webkit-slider-thumb {
-      appearance: none;
-      -webkit-appearance: none;
-      width: 18px;
-      height: 18px;
+    
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--border);
+      border-top-color: var(--brand-primary);
       border-radius: 50%;
-      background: hsl(var(--primary));
-      cursor: pointer;
+      animation: spin 0.8s linear infinite;
     }
-
-    /* Empty State */
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* ============================================
+       RESULTS
+       ============================================ */
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    
+    .results-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+    
+    .results-summary {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .issue-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+    
+    .issue-card:hover {
+      border-color: var(--muted-foreground);
+    }
+    
+    .issue-card.fixed {
+      opacity: 0.5;
+    }
+    
+    .issue-header {
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      background: var(--card);
+    }
+    
+    .issue-header:hover {
+      background: var(--muted);
+    }
+    
+    .issue-type {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 500;
+    }
+    
+    .issue-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    
+    .issue-indicator.fail { background: var(--destructive); }
+    .issue-indicator.warning { background: var(--warning); }
+    
+    .issue-chevron {
+      color: var(--muted-foreground);
+      transition: transform 0.2s ease;
+    }
+    
+    .issue-card.open .issue-chevron {
+      transform: rotate(180deg);
+    }
+    
+    .issue-body {
+      padding: 14px;
+      border-top: 1px solid var(--border);
+      background: var(--muted);
+      display: none;
+    }
+    
+    .issue-card.open .issue-body {
+      display: block;
+    }
+    
+    .issue-detail {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .issue-detail:last-of-type {
+      border-bottom: none;
+    }
+    
+    .issue-detail-label {
+      font-size: 12px;
+      color: var(--muted-foreground);
+    }
+    
+    .issue-detail-value {
+      font-size: 12px;
+      font-weight: 500;
+    }
+    
+    .issue-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    
+    .success-card {
+      text-align: center;
+      padding: 32px 16px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: var(--radius);
+    }
+    
+    .success-icon {
+      width: 56px;
+      height: 56px;
+      background: var(--success);
+      border-radius: 50%;
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+    
+    .success-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #166534;
+      margin-bottom: 4px;
+    }
+    
+    .success-desc {
+      font-size: 13px;
+      color: #15803d;
+    }
+    
+    /* ============================================
+       SETTINGS
+       ============================================ */
+    .settings-section {
+      margin-bottom: 24px;
+    }
+    
+    .settings-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted-foreground);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+    
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .settings-row:last-child {
+      border-bottom: none;
+    }
+    
+    .settings-label {
+      font-size: 13px;
+    }
+    
+    .settings-desc {
+      font-size: 11px;
+      color: var(--muted-foreground);
+      margin-top: 2px;
+    }
+    
+    .select {
+      padding: 8px 32px 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 13px;
+      background: var(--background);
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      background-size: 16px;
+    }
+    
+    .info-box {
+      background: var(--brand-light);
+      border: 1px solid #bfdbfe;
+      border-radius: var(--radius);
+      padding: 12px;
+      font-size: 12px;
+      color: #1e40af;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    
+    /* ============================================
+       PRICING CARDS
+       ============================================ */
+    .pricing-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .pricing-card {
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    
+    .pricing-card:hover {
+      border-color: var(--brand-primary);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .pricing-card.popular {
+      border-color: var(--brand-primary);
+      background: linear-gradient(180deg, var(--brand-light) 0%, var(--background) 100%);
+    }
+    
+    .pricing-badge {
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--brand-gradient);
+      color: white;
+      padding: 4px 14px;
+      border-radius: 100px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .pricing-header {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    
+    .pricing-name {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--foreground);
+      margin-bottom: 8px;
+    }
+    
+    .pricing-price {
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--foreground);
+      line-height: 1;
+    }
+    
+    .pricing-price .currency {
+      font-size: 18px;
+      font-weight: 600;
+      vertical-align: top;
+    }
+    
+    .pricing-price .period {
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--muted-foreground);
+    }
+    
+    .pricing-subtitle {
+      font-size: 12px;
+      color: var(--muted-foreground);
+      margin-top: 4px;
+    }
+    
+    .pricing-features {
+      margin: 20px 0;
+      padding: 0;
+      list-style: none;
+    }
+    
+    .pricing-features li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 0;
+      font-size: 13px;
+      color: var(--foreground);
+    }
+    
+    .pricing-features svg {
+      color: var(--success);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    
+    .pricing-toggle {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding: 4px;
+      background: var(--muted);
+      border-radius: var(--radius);
+    }
+    
+    .pricing-toggle-btn {
+      padding: 8px 16px;
+      border: none;
+      background: transparent;
+      border-radius: calc(var(--radius) - 2px);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted-foreground);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    
+    .pricing-toggle-btn.active {
+      background: var(--background);
+      color: var(--foreground);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .pricing-toggle-btn .save-badge {
+      background: #dcfce7;
+      color: #166534;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      margin-left: 6px;
+    }
+    
+    /* ============================================
+       HISTORY
+       ============================================ */
+    .history-item {
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .history-item:hover {
+      background: var(--muted);
+      border-color: var(--muted-foreground);
+    }
+    
+    .history-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--muted);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted-foreground);
+    }
+    
+    .history-info {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .history-name {
+      font-size: 13px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .history-meta {
+      font-size: 11px;
+      color: var(--muted-foreground);
+      margin-top: 2px;
+    }
+    
+    .history-issues {
+      padding: 4px 8px;
+      background: var(--muted);
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--muted-foreground);
+    }
+    
     .empty-state {
       text-align: center;
       padding: 48px 24px;
-      color: hsl(var(--muted-foreground));
     }
-
-    .empty-state-icon {
-      font-size: 48px;
-      margin-bottom: 16px;
-      opacity: 0.5;
+    
+    .empty-icon {
+      width: 64px;
+      height: 64px;
+      background: var(--muted);
+      border-radius: 16px;
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted-foreground);
     }
-
-    .empty-state h3 {
+    
+    .empty-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    
+    .empty-desc {
+      font-size: 13px;
+      color: var(--muted-foreground);
+    }
+    
+    /* ============================================
+       MODAL
+       ============================================ */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      animation: fadeIn 0.2s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    .modal {
+      background: var(--background);
+      border-radius: var(--radius);
+      width: calc(100% - 32px);
+      max-width: 360px;
+      max-height: calc(100% - 32px);
+      overflow-y: auto;
+      animation: slideUp 0.3s ease;
+    }
+    
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .modal-title {
       font-size: 16px;
       font-weight: 600;
-      margin-bottom: 8px;
-      color: hsl(var(--foreground));
     }
-
-    /* Loading */
-    .loading {
-      text-align: center;
-      padding: 32px 24px;
-    }
-
-    .spinner {
-      border: 3px solid hsl(var(--border));
-      border-top: 3px solid hsl(var(--primary));
-      border-radius: 50%;
+    
+    .modal-close {
       width: 32px;
       height: 32px;
-      animation: spin 1s linear infinite;
+      border: none;
+      background: var(--muted);
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted-foreground);
+    }
+    
+    .modal-close:hover {
+      background: var(--border);
+      color: var(--foreground);
+    }
+    
+    .modal-body {
+      padding: 20px;
+    }
+    
+    .modal-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      background: var(--muted);
+    }
+    
+    /* ============================================
+       UPGRADE PROMPT
+       ============================================ */
+    .upgrade-prompt {
+      background: linear-gradient(135deg, #eff6ff 0%, #f5f3ff 100%);
+      border: 1px solid #c7d2fe;
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    
+    .upgrade-prompt-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--brand-gradient);
+      border-radius: 12px;
       margin: 0 auto 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
     }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+    
+    .upgrade-prompt-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 4px;
     }
-
-    /* Toast */
-    .toast {
+    
+    .upgrade-prompt-desc {
+      font-size: 12px;
+      color: var(--muted-foreground);
+      margin-bottom: 16px;
+    }
+    
+    /* ============================================
+       COLLAPSIBLE
+       ============================================ */
+    .collapsible {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    
+    .collapsible-trigger {
+      width: 100%;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--card);
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--foreground);
+    }
+    
+    .collapsible-trigger:hover {
+      background: var(--muted);
+    }
+    
+    .collapsible-trigger-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .collapsible-chevron {
+      transition: transform 0.2s ease;
+      color: var(--muted-foreground);
+    }
+    
+    .collapsible.open .collapsible-chevron {
+      transform: rotate(180deg);
+    }
+    
+    .collapsible-content {
+      display: none;
+      padding: 0 14px 14px;
+      background: var(--card);
+    }
+    
+    .collapsible.open .collapsible-content {
+      display: block;
+    }
+    
+    /* ============================================
+       TOAST
+       ============================================ */
+    .toast-container {
       position: fixed;
       bottom: 16px;
+      left: 16px;
       right: 16px;
-      min-width: 260px;
-      background: hsl(var(--background));
-      border: 1px solid hsl(var(--border));
-      border-radius: var(--radius);
-      padding: 12px;
-      box-shadow: 0 10px 25px hsl(var(--foreground) / 0.1);
-      display: flex;
-      gap: 10px;
-      align-items: start;
-      z-index: 9999;
-      animation: slideIn 0.3s ease-out;
+      z-index: 1001;
+      pointer-events: none;
     }
-
+    
+    .toast {
+      background: var(--foreground);
+      color: var(--background);
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      pointer-events: auto;
+      animation: slideIn 0.3s ease;
+      margin-top: 8px;
+    }
+    
+    .toast.success { background: var(--success); }
+    .toast.error { background: var(--destructive); }
+    .toast.warning { background: var(--warning); color: var(--foreground); }
+    
     @keyframes slideIn {
       from { transform: translateY(100%); opacity: 0; }
       to { transform: translateY(0); opacity: 1; }
     }
-
-    .toast-success { border-left: 4px solid hsl(var(--success)); }
-    .toast-error { border-left: 4px solid hsl(var(--destructive)); }
-    .toast-warning { border-left: 4px solid hsl(var(--warning)); }
-
-    .toast-icon { font-size: 18px; flex-shrink: 0; }
-    .toast-content { flex: 1; }
-    .toast-title { font-weight: 600; font-size: 13px; }
-    .toast-message { font-size: 12px; color: hsl(var(--muted-foreground)); }
-    .toast-close {
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 16px;
-      color: hsl(var(--muted-foreground));
-      padding: 0;
-    }
-
-    /* Issue Cards */
-    .issue-card {
-      background: hsl(var(--background));
-      border: 1px solid hsl(var(--border));
-      border-left: 4px solid;
+    
+    /* ============================================
+       INPUT
+       ============================================ */
+    .input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 12px;
-      margin-bottom: 12px;
+      font-size: 13px;
+      transition: all 0.15s;
     }
-
-    .issue-card.fail {
-      border-left-color: hsl(var(--destructive));
-      background: hsl(var(--destructive) / 0.03);
+    
+    .input:focus {
+      outline: none;
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
     }
-
-    .issue-card.warning {
-      border-left-color: hsl(var(--warning));
-      background: hsl(var(--warning) / 0.03);
-    }
-
-    .issue-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-
-    .issue-title { font-weight: 600; font-size: 14px; }
-
-    .issue-details {
-      font-size: 12px;
-      color: hsl(var(--muted-foreground));
-      margin-bottom: 8px;
-      line-height: 1.6;
-    }
-
-    .issue-fix {
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid hsl(var(--border));
-    }
-
-    /* Collapsible Section */
-    .collapsible {
-      border: 1px solid hsl(var(--border));
-      border-radius: var(--radius);
+    
+    .input-group {
       margin-bottom: 16px;
-      overflow: hidden;
     }
-
-    .collapsible-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 16px;
-      background: hsl(var(--muted) / 0.3);
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .collapsible-header:hover {
-      background: hsl(var(--muted) / 0.5);
-    }
-
-    .collapsible-title {
-      font-size: 14px;
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .collapsible-chevron {
-      font-size: 12px;
-      transition: transform 0.2s;
-    }
-
-    .collapsible.open .collapsible-chevron {
-      transform: rotate(180deg);
-    }
-
-    .collapsible-content {
-      padding: 16px;
-      display: none;
-    }
-
-    .collapsible.open .collapsible-content {
-      display: block;
-    }
-
-    /* Settings Group */
-    .settings-group { margin-bottom: 20px; }
-    .settings-label {
+    
+    .input-label {
       display: block;
       font-size: 13px;
       font-weight: 500;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
-    .settings-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-
-    /* Info Box */
-    .info-box {
-      background: hsl(var(--primary) / 0.05);
-      border-left: 3px solid hsl(var(--primary));
-      padding: 10px 12px;
-      margin: 12px 0;
-      border-radius: 4px;
-      font-size: 12px;
-      line-height: 1.5;
-    }
-
-    /* History Item */
-    .history-item {
-      padding: 12px;
-      border: 1px solid hsl(var(--border));
-      border-radius: var(--radius);
-      margin-bottom: 8px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .history-item:hover {
-      background: hsl(var(--muted) / 0.5);
-      border-color: hsl(var(--primary) / 0.3);
-    }
-
-    .history-item-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-
-    .history-item-name {
-      font-weight: 500;
-      font-size: 14px;
-    }
-
-    .history-item-time {
+    
+    .input-hint {
       font-size: 11px;
-      color: hsl(var(--muted-foreground));
+      color: var(--muted-foreground);
+      margin-top: 4px;
     }
-
-    .history-item-stats {
-      display: flex;
-      gap: 8px;
-    }
-
-    /* Progress Bar */
-    .progress-container {
-      margin: 16px 0;
-    }
-
-    .progress-bar {
-      height: 6px;
-      background: hsl(var(--border));
-      border-radius: 3px;
-      overflow: hidden;
-    }
-
-    .progress-fill {
-      height: 100%;
-      background: hsl(var(--primary));
-      transition: width 0.3s ease;
-    }
-
-    .progress-text {
-      font-size: 12px;
-      color: hsl(var(--muted-foreground));
-      margin-top: 6px;
-      text-align: center;
-    }
-
-    /* Frame Selection Card */
-    .frame-card {
-      padding: 16px;
-      border: 2px dashed hsl(var(--border));
-      border-radius: var(--radius);
-      text-align: center;
-      margin-bottom: 16px;
-    }
-
-    /* Overlay Toggle on Analyze Page */
-    .overlay-toggle-container {
-      margin: 16px 0;
-      padding: 12px 16px;
-      background: hsl(var(--muted) / 0.3);
-      border-radius: var(--radius);
-      border: 1px solid hsl(var(--border));
-    }
-
-    .toggle-label {
+    
+    /* ============================================
+       SECURE BADGE
+       ============================================ */
+    .secure-badge {
       display: flex;
       align-items: center;
-      gap: 12px;
-      cursor: pointer;
-      font-size: 14px;
-      color: hsl(var(--foreground));
-      user-select: none;
-    }
-
-    .toggle-label input[type="checkbox"] {
-      display: none;
-    }
-
-    .toggle-slider {
-      position: relative;
-      width: 44px;
-      height: 24px;
-      background: hsl(var(--border));
-      border-radius: 12px;
-      transition: background 0.2s ease;
-      flex-shrink: 0;
-    }
-
-    .toggle-slider::after {
-      content: '';
-      position: absolute;
-      top: 2px;
-      left: 2px;
-      width: 20px;
-      height: 20px;
-      background: white;
-      border-radius: 50%;
-      transition: transform 0.2s ease;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    }
-
-    .toggle-label input:checked + .toggle-slider {
-      background: hsl(var(--primary));
-    }
-
-    .toggle-label input:checked + .toggle-slider::after {
-      transform: translateX(20px);
-    }
-
-    .toggle-text {
-      font-weight: 500;
-    }
-
-    .toggle-hint {
+      justify-content: center;
+      gap: 6px;
       font-size: 11px;
-      color: hsl(var(--muted-foreground));
-      margin-top: 2px;
+      color: var(--muted-foreground);
+      margin-top: 12px;
     }
-
-    .frame-card.selected {
-      border-style: solid;
-      border-color: hsl(var(--primary));
-      background: hsl(var(--primary) / 0.03);
-    }
-
-    .frame-icon {
-      font-size: 32px;
-      margin-bottom: 8px;
-    }
-
-    .frame-name {
-      font-size: 16px;
-      font-weight: 600;
-      margin-bottom: 4px;
-      word-break: break-word;
-    }
-
-    .frame-status {
-      font-size: 12px;
-      color: hsl(var(--muted-foreground));
+    
+    .secure-badge svg {
+      color: var(--success);
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div id="main-app" style="display: flex; flex-direction: column; min-height: 100vh;">
-      <!-- Header -->
-      <div class="header">
-        <div class="header-left">
-          <div class="header-title">🎯 A11y Audit Pro</div>
-          <div class="header-subtitle" id="user-plan-badge">Free Plan</div>
+    <!-- Header -->
+    <div class="header">
+      <div class="header-left">
+        <div class="logo">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+        </div>
+        <div class="header-title">
+          <h1>A11y Audit Pro</h1>
+          <p>WCAG Accessibility Checker</p>
         </div>
       </div>
-
-      <!-- Tabs -->
-      <div class="tabs">
-        <button class="tab-btn active" data-tab="analyze" onclick="switchTab('analyze')">Analyze</button>
-        <button class="tab-btn" data-tab="history" onclick="switchTab('history')">History</button>
-        <button class="tab-btn" data-tab="settings" onclick="switchTab('settings')">Settings</button>
-      </div>
-
-      <!-- ==================== ANALYZE TAB ==================== -->
-      <div class="tab-content" id="analyze-tab">
-        
-        <!-- Frame Selection -->
-        <div id="frame-card" class="frame-card">
-          <div class="frame-icon">📄</div>
-          <div class="frame-name" id="frame-name">No Frame Selected</div>
-          <div class="frame-status" id="frame-status">Select a frame in Figma to analyze</div>
-        </div>
-
-        <!-- Checks Section (Collapsible - Open by Default) -->
-        <div class="collapsible open" id="checks-collapsible">
-          <div class="collapsible-header" onclick="toggleCollapsible('checks-collapsible')">
-            <span class="collapsible-title">
-              🎨 What to Check
-            </span>
-            <span class="collapsible-chevron">▼</span>
-          </div>
-          <div class="collapsible-content">
-            <label class="checkbox-wrapper">
-              <input type="checkbox" class="checkbox" id="check-color-contrast" checked>
-              <span>Color Contrast</span>
-            </label>
-            <label class="checkbox-wrapper">
-              <input type="checkbox" class="checkbox" id="check-text-spacing" checked>
-              <span>Text Spacing</span>
-            </label>
-            <label class="checkbox-wrapper">
-              <input type="checkbox" class="checkbox" id="check-line-height" checked>
-              <span>Line Height</span>
-            </label>
-            <label class="checkbox-wrapper">
-              <input type="checkbox" class="checkbox" id="check-paragraph-spacing" checked>
-              <span>Paragraph Spacing</span>
-            </label>
-            <label class="checkbox-wrapper">
-              <input type="checkbox" class="checkbox" id="check-non-text-contrast" checked>
-              <span>Non-text Contrast</span>
-            </label>
-            <label class="checkbox-wrapper" style="opacity: 0.5;">
-              <input type="checkbox" class="checkbox" disabled>
-              <span>Touch Target Size (Coming Soon)</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- Overlay Toggle (Quick Access) -->
-        <div class="overlay-toggle-container">
-          <label class="toggle-label">
-            <input type="checkbox" id="show-overlay-toggle" checked onchange="toggleOverlay(this.checked)">
-            <span class="toggle-slider"></span>
-            <div>
-              <span class="toggle-text">Show Visual Overlays</span>
-              <div class="toggle-hint">Highlight issues on the canvas</div>
-            </div>
-          </label>
-        </div>
-
-        <!-- Analyze Button -->
-        <button class="btn btn-primary btn-full btn-lg" id="analyze-btn" onclick="analyzeFrame()" disabled>
-          🔍 Analyze Frame
-        </button>
-
-        <!-- Progress (Hidden by default) -->
-        <div id="progress-container" class="progress-container hidden">
-          <div class="progress-bar">
-            <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
-          </div>
-          <div class="progress-text" id="progress-text">Analyzing...</div>
-        </div>
-
-        <!-- Results Container -->
-        <div id="results-container" style="margin-top: 16px;">
-          <!-- Results will be inserted here -->
+      <span class="plan-badge free" id="plan-badge">Free</span>
+    </div>
+    
+    <!-- Usage Bar (Free Users) -->
+    <div class="usage-bar hidden" id="usage-bar">
+      <div class="usage-info">
+        <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 9v4"/>
+          <path d="M12 17h.01"/>
+          <circle cx="12" cy="12" r="10"/>
+        </svg>
+        <span id="usage-text">0/10 analyses used</span>
+        <div class="usage-progress">
+          <div class="usage-progress-fill" id="usage-fill" style="width: 0%"></div>
         </div>
       </div>
-
-      <!-- ==================== HISTORY TAB ==================== -->
-      <div class="tab-content hidden" id="history-tab">
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">📊 Analysis History</div>
-            <div class="card-description">Your recent accessibility checks</div>
-          </div>
-          <div class="card-content" id="history-container">
-            <!-- History will be loaded here -->
-          </div>
+      <span class="usage-upgrade" onclick="showUpgradeModal()">Upgrade</span>
+    </div>
+    
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" data-tab="analyze">
+        <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.35-4.35"/>
+        </svg>
+        Analyze
+      </button>
+      <button class="tab" data-tab="history">
+        <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+        History
+      </button>
+      <button class="tab" data-tab="settings">
+        <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+        Settings
+      </button>
+    </div>
+    
+    <!-- ============================================
+         ANALYZE TAB
+         ============================================ -->
+    <div class="tab-content" id="analyze-tab">
+      
+      <!-- Upgrade Prompt (shown when limit reached) -->
+      <div class="upgrade-prompt hidden" id="upgrade-prompt">
+        <div class="upgrade-prompt-icon">
+          <svg class="icon icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v20"/>
+            <path d="m17 5-5-3-5 3"/>
+            <path d="m17 19-5 3-5-3"/>
+          </svg>
         </div>
-        <button class="btn btn-ghost btn-full" onclick="clearHistory()">
-          🗑️ Clear History
+        <div class="upgrade-prompt-title">Free Limit Reached</div>
+        <div class="upgrade-prompt-desc">Upgrade to Pro for unlimited analyses and advanced features</div>
+        <button class="btn btn-gradient" onclick="showUpgradeModal()">
+          Upgrade to Pro - $6/month
         </button>
       </div>
-
-      <!-- ==================== SETTINGS TAB ==================== -->
-      <div class="tab-content hidden" id="settings-tab">
-        
-        <!-- WCAG Standard -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">📋 WCAG Standard</div>
-            <div class="card-description">Choose your compliance level</div>
-          </div>
-          <div class="card-content">
-            <div class="settings-group">
-              <label class="settings-label">Version</label>
-              <select class="select" id="wcag-version" onchange="updateWCAGDescription()">
-                <option value="2.0">WCAG 2.0</option>
-                <option value="2.1" selected>WCAG 2.1 (Recommended)</option>
-                <option value="2.2">WCAG 2.2 (Latest)</option>
-              </select>
-            </div>
-            
-            <div class="settings-group">
-              <label class="settings-label">Level</label>
-              <select class="select" id="wcag-level" onchange="updateWCAGDescription()">
-                <option value="AA" selected>AA (Standard)</option>
-                <option value="AAA">AAA (Strict)</option>
-              </select>
-            </div>
-            
-            <div class="info-box" id="wcag-description">
-              WCAG 2.1 AA is recommended for most projects. Includes mobile and touch accessibility.
-            </div>
+      
+      <!-- Frame Info -->
+      <div id="frame-card" class="frame-card hidden">
+        <div class="frame-icon-wrapper">
+          <svg class="icon icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <path d="M3 9h18"/>
+            <path d="M9 21V9"/>
+          </svg>
+        </div>
+        <div class="frame-info">
+          <div class="frame-name" id="frame-name">Frame Name</div>
+          <div class="frame-status">
+            <span class="status-dot"></span>
+            Ready to analyze
           </div>
         </div>
-
-        <!-- Display Options -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">🎯 Display Options</div>
-            <div class="card-description">How to show issues</div>
-          </div>
-          <div class="card-content">
-            <label class="checkbox-wrapper">
-              <input type="checkbox" class="checkbox" id="show-overlays" checked>
-              <span>Show Visual Overlays</span>
-            </label>
-            <label class="checkbox-wrapper">
-              <input type="checkbox" class="checkbox" id="group-by-element" checked>
-              <span>Group Issues by Element</span>
-            </label>
-            <label class="checkbox-wrapper">
-              <input type="checkbox" class="checkbox" id="show-only-failures">
-              <span>Show Only Failing Checks</span>
-            </label>
-            
-            <div class="settings-group" style="margin-top: 16px;">
-              <div class="settings-row">
-                <label class="settings-label">Overlay Brightness</label>
-                <span id="opacity-value">70%</span>
+      </div>
+      
+      <div id="no-frame-card" class="no-frame-card">
+        <div class="no-frame-icon">
+          <svg class="icon icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="4 4"/>
+            <path d="M12 8v8"/>
+            <path d="M8 12h8"/>
+          </svg>
+        </div>
+        <div class="no-frame-title">No Frame Selected</div>
+        <div class="no-frame-desc">Select a frame in Figma to analyze</div>
+      </div>
+      
+      <!-- What to Check -->
+      <div class="collapsible open" id="checks-collapsible">
+        <button class="collapsible-trigger" onclick="toggleCollapsible('checks-collapsible')">
+          <span class="collapsible-trigger-left">
+            <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 11l3 3L22 4"/>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+            </svg>
+            What to Check
+          </span>
+          <svg class="icon icon-sm collapsible-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="m6 9 6 6 6-6"/>
+          </svg>
+        </button>
+        <div class="collapsible-content">
+          <div class="checkbox-group">
+            <label class="checkbox-item">
+              <input type="checkbox" id="check-contrast" checked>
+              <div>
+                <div class="checkbox-label">Color Contrast</div>
+                <div class="checkbox-desc">WCAG 1.4.3 - Text readability</div>
               </div>
-              <input type="range" class="slider" id="overlay-opacity" min="0" max="100" value="70" oninput="updateOpacityValue(this.value)">
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" id="check-spacing" checked>
+              <div>
+                <div class="checkbox-label">Text Spacing</div>
+                <div class="checkbox-desc">WCAG 1.4.12 - Letter spacing</div>
+              </div>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" id="check-lineheight" checked>
+              <div>
+                <div class="checkbox-label">Line Height</div>
+                <div class="checkbox-desc">WCAG 1.4.12 - Text block spacing</div>
+              </div>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" id="check-paragraph" checked>
+              <div>
+                <div class="checkbox-label">Paragraph Spacing</div>
+                <div class="checkbox-desc">WCAG 1.4.12 - Paragraph separation</div>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Overlay Toggle -->
+      <div class="toggle-wrapper">
+        <div class="toggle-label">
+          <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <path d="M3 9h18"/>
+          </svg>
+          Show Visual Overlays
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="overlay-toggle" checked>
+          <span class="toggle-track"></span>
+          <span class="toggle-thumb"></span>
+        </label>
+      </div>
+      
+      <!-- Analyze Button -->
+      <button class="btn btn-primary btn-lg" id="analyze-btn" disabled style="margin-top: 16px;">
+        <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.35-4.35"/>
+        </svg>
+        Analyze Frame
+      </button>
+      
+      <!-- Progress -->
+      <div id="progress" class="progress-wrapper hidden">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+        </div>
+        <div class="progress-text">
+          <span class="spinner"></span>
+          Analyzing accessibility issues...
+        </div>
+      </div>
+      
+      <!-- Results -->
+      <div id="results-section" class="hidden" style="margin-top: 20px;">
+        <div class="results-header">
+          <span class="results-title" id="results-title">Issues Found</span>
+          <div class="results-summary">
+            <span class="badge badge-destructive" id="fail-count">0 Fails</span>
+            <span class="badge badge-warning" id="warning-count">0 Warnings</span>
+          </div>
+        </div>
+        <div id="issues-list"></div>
+      </div>
+      
+      <!-- Success State -->
+      <div id="success-state" class="success-card hidden" style="margin-top: 20px;">
+        <div class="success-icon">
+          <svg class="icon icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M20 6 9 17l-5-5"/>
+          </svg>
+        </div>
+        <div class="success-title">All Checks Passed!</div>
+        <div class="success-desc">No accessibility issues found in this frame</div>
+      </div>
+      
+    </div>
+    
+    <!-- ============================================
+         HISTORY TAB
+         ============================================ -->
+    <div class="tab-content hidden" id="history-tab">
+      <div id="history-list"></div>
+      
+      <div id="history-empty" class="empty-state">
+        <div class="empty-icon">
+          <svg class="icon icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <div class="empty-title">No History Yet</div>
+        <div class="empty-desc">Your analysis history will appear here</div>
+      </div>
+    </div>
+    
+    <!-- ============================================
+         SETTINGS TAB
+         ============================================ -->
+    <div class="tab-content hidden" id="settings-tab">
+      
+      <!-- WCAG Standard -->
+      <div class="settings-section">
+        <div class="settings-title">WCAG Standard</div>
+        <div class="card">
+          <div class="card-content" style="padding-top: 16px;">
+            <div class="settings-row">
+              <div>
+                <div class="settings-label">Version</div>
+                <div class="settings-desc">Choose compliance standard</div>
+              </div>
+              <select class="select" id="wcag-version">
+                <option value="2.0">WCAG 2.0</option>
+                <option value="2.1" selected>WCAG 2.1</option>
+                <option value="2.2">WCAG 2.2</option>
+              </select>
+            </div>
+            <div class="settings-row">
+              <div>
+                <div class="settings-label">Level</div>
+                <div class="settings-desc">AA is recommended minimum</div>
+              </div>
+              <select class="select" id="wcag-level">
+                <option value="AA" selected>AA (Minimum)</option>
+                <option value="AAA">AAA (Enhanced)</option>
+              </select>
             </div>
           </div>
         </div>
-
-        <!-- Storage Settings (Simple terminology for designers) -->
+        
+        <div class="info-box">
+          <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 16v-4"/>
+            <path d="M12 8h.01"/>
+          </svg>
+          <span id="wcag-description">WCAG 2.1 AA includes mobile and touch accessibility requirements.</span>
+        </div>
+      </div>
+      
+      <!-- Subscription (Free users) -->
+      <div class="settings-section" id="subscription-section">
+        <div class="settings-title">Your Plan</div>
         <div class="card">
-          <div class="card-header">
-            <div class="card-title">💾 Saved Results</div>
-            <div class="card-description">Manage your analysis data</div>
+          <div class="card-content" style="padding-top: 16px;">
+            <div class="settings-row">
+              <div>
+                <div class="settings-label" id="current-plan-name">Free Plan</div>
+                <div class="settings-desc" id="current-plan-desc">10 analyses per month</div>
+              </div>
+              <button class="btn btn-sm btn-gradient" onclick="showUpgradeModal()" id="upgrade-settings-btn">
+                Upgrade
+              </button>
+            </div>
           </div>
-          <div class="card-content">
-            <div class="settings-group">
-              <label class="settings-label">Keep results for</label>
-              <select class="select" id="cache-ttl">
-                <option value="1">1 day</option>
-                <option value="3">3 days</option>
-                <option value="7" selected>1 week</option>
-                <option value="14">2 weeks</option>
-                <option value="30">1 month</option>
-              </select>
+        </div>
+      </div>
+      
+      <!-- Data Management -->
+      <div class="settings-section">
+        <div class="settings-title">Data Management</div>
+        <div class="card">
+          <div class="card-content" style="padding-top: 16px;">
+            <div class="settings-row">
+              <div>
+                <div class="settings-label">Clear History</div>
+                <div class="settings-desc">Remove all saved analyses</div>
+              </div>
+              <button class="btn btn-outline btn-sm" id="clear-history-btn">
+                <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 6h18"/>
+                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                </svg>
+                Clear
+              </button>
             </div>
-            
-            <div class="info-box">
-              💡 Previously analyzed frames load instantly. Longer storage = faster re-checks.
+          </div>
+        </div>
+      </div>
+      
+      <!-- About -->
+      <div class="settings-section">
+        <div class="settings-title">About</div>
+        <div class="card">
+          <div class="card-content" style="padding-top: 16px;">
+            <div class="settings-row">
+              <div class="settings-label">Version</div>
+              <div class="settings-desc">2.0.0</div>
             </div>
-            
-            <button class="btn btn-secondary btn-full" onclick="clearAllCache()" style="margin-top: 12px;">
-              🗑️ Clear All Saved Results
+            <div class="settings-row">
+              <div class="settings-label">Support</div>
+              <div class="settings-desc">support@a11yaudit.pro</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+    
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+    
+  </div>
+  
+  <!-- ============================================
+       UPGRADE MODAL
+       ============================================ -->
+  <div class="modal-overlay hidden" id="upgrade-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Upgrade Your Plan</div>
+        <button class="modal-close" onclick="hideUpgradeModal()">
+          <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6 6 18"/>
+            <path d="m6 6 12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        
+        <!-- Billing Toggle -->
+        <div class="pricing-toggle">
+          <button class="pricing-toggle-btn active" data-billing="monthly" onclick="toggleBilling('monthly')">
+            Monthly
+          </button>
+          <button class="pricing-toggle-btn" data-billing="annual" onclick="toggleBilling('annual')">
+            Annual <span class="save-badge">Save 16%</span>
+          </button>
+        </div>
+        
+        <!-- Pricing Cards -->
+        <div class="pricing-grid">
+          <!-- Pro Plan -->
+          <div class="pricing-card popular" id="pro-card" onclick="selectPlan('pro')">
+            <span class="pricing-badge">Most Popular</span>
+            <div class="pricing-header">
+              <div class="pricing-name">Pro</div>
+              <div class="pricing-price">
+                <span class="currency">$</span><span id="pro-price">6</span><span class="period">/mo</span>
+              </div>
+              <div class="pricing-subtitle" id="pro-subtitle">Billed monthly</div>
+            </div>
+            <ul class="pricing-features">
+              <li>
+                <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M20 6 9 17l-5-5"/>
+                </svg>
+                Unlimited analyses
+              </li>
+              <li>
+                <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M20 6 9 17l-5-5"/>
+                </svg>
+                WCAG 2.0/2.1/2.2 switching
+              </li>
+              <li>
+                <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M20 6 9 17l-5-5"/>
+                </svg>
+                One-click fixes
+              </li>
+              <li>
+                <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M20 6 9 17l-5-5"/>
+                </svg>
+                Unlimited history
+              </li>
+              <li>
+                <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M20 6 9 17l-5-5"/>
+                </svg>
+                Priority support
+              </li>
+            </ul>
+            <button class="btn btn-gradient" onclick="startPayment('pro')">
+              Get Pro
+            </button>
+          </div>
+          
+          <!-- Team Plan -->
+          <div class="pricing-card" id="team-card" onclick="selectPlan('team')">
+            <div class="pricing-header">
+              <div class="pricing-name">Team</div>
+              <div class="pricing-price">
+                <span class="currency">$</span><span id="team-price">22</span><span class="period">/mo</span>
+              </div>
+              <div class="pricing-subtitle" id="team-subtitle">5 seats included • $4.40/seat</div>
+            </div>
+            <ul class="pricing-features">
+              <li>
+                <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M20 6 9 17l-5-5"/>
+                </svg>
+                Everything in Pro
+              </li>
+              <li>
+                <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M20 6 9 17l-5-5"/>
+                </svg>
+                5 team seats included
+              </li>
+              <li>
+                <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M20 6 9 17l-5-5"/>
+                </svg>
+                Shared team history
+              </li>
+              <li>
+                <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M20 6 9 17l-5-5"/>
+                </svg>
+                Team admin controls
+              </li>
+              <li>
+                <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M20 6 9 17l-5-5"/>
+                </svg>
+                Priority Slack support
+              </li>
+            </ul>
+            <button class="btn btn-outline" onclick="startPayment('team')">
+              Get Team
             </button>
           </div>
         </div>
-
-        <!-- Save Settings Button -->
-        <button class="btn btn-primary btn-full btn-lg" onclick="saveSettings()">
-          💾 Save Settings
+        
+        <div class="secure-badge">
+          <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          Secured by Razorpay • 256-bit SSL encryption
+        </div>
+        
+      </div>
+    </div>
+  </div>
+  
+  <!-- ============================================
+       EMAIL MODAL (for checkout)
+       ============================================ -->
+  <div class="modal-overlay hidden" id="email-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Complete Your Purchase</div>
+        <button class="modal-close" onclick="hideEmailModal()">
+          <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6 6 18"/>
+            <path d="m6 6 12 12"/>
+          </svg>
         </button>
+      </div>
+      <div class="modal-body">
+        <div class="input-group">
+          <label class="input-label">Email Address</label>
+          <input type="email" class="input" id="checkout-email" placeholder="your@email.com">
+          <div class="input-hint">We'll send your receipt and account details here</div>
+        </div>
+        
+        <div style="background: var(--muted); padding: 16px; border-radius: var(--radius); margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="color: var(--muted-foreground);">Plan</span>
+            <span style="font-weight: 600;" id="checkout-plan-name">Pro Monthly</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--muted-foreground);">Amount</span>
+            <span style="font-weight: 600;" id="checkout-amount">₹500/month</span>
+          </div>
+        </div>
+        
+        <button class="btn btn-gradient btn-lg" onclick="proceedToPayment()" id="proceed-btn">
+          <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          Pay Securely
+        </button>
+        
+        <div class="secure-badge">
+          <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          Powered by Razorpay
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Toast Container -->
-  <div id="toast-container"></div>
-
   <script>
-    // ==========================================
-    // STATE
-    // ==========================================
-    let isFrameSelected = false;
-    let isAnalyzing = false;
-    let currentFrameName = '';
-    let historyLoadTimeout = null;
-
-    // ==========================================
-    // TAB SWITCHING
-    // ==========================================
-    function switchTab(tabName) {
-      document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('active');
-      });
-      document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-      
-      document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.add('hidden');
-      });
-      document.getElementById(`${tabName}-tab`).classList.remove('hidden');
-      
-      if (tabName === 'history') {
-        loadHistory();
-      } else if (tabName === 'settings') {
-        loadSettings();
+    // ============================================
+    // CONFIGURATION
+    // ============================================
+    const RAZORPAY_KEY = 'rzp_test_RkmwYLTth09O1G';
+    
+    const PRICING = {
+      pro: {
+        monthly: { amount: 50000, display: '$6', inr: '₹500', period: 'month' },
+        annual: { amount: 500000, display: '$60', inr: '₹5,000', period: 'year', savings: '2 months free' }
+      },
+      team: {
+        monthly: { amount: 185000, display: '$22', inr: '₹1,850', period: 'month', seats: 5 },
+        annual: { amount: 1850000, display: '$220', inr: '₹18,500', period: 'year', seats: 5, savings: '2 months free' }
       }
-    }
-
-    // ==========================================
+    };
+    
+    // ============================================
+    // STATE
+    // ============================================
+    let hasFrame = false;
+    let isAnalyzing = false;
+    let currentIssues = [];
+    let userLicense = null;
+    let selectedPlan = 'pro';
+    let billingCycle = 'monthly';
+    
+    // ============================================
+    // ELEMENTS
+    // ============================================
+    const frameCard = document.getElementById('frame-card');
+    const noFrameCard = document.getElementById('no-frame-card');
+    const frameName = document.getElementById('frame-name');
+    const analyzeBtn = document.getElementById('analyze-btn');
+    const progress = document.getElementById('progress');
+    const progressFill = document.getElementById('progress-fill');
+    const resultsSection = document.getElementById('results-section');
+    const issuesList = document.getElementById('issues-list');
+    const successState = document.getElementById('success-state');
+    const overlayToggle = document.getElementById('overlay-toggle');
+    const planBadge = document.getElementById('plan-badge');
+    const usageBar = document.getElementById('usage-bar');
+    const upgradePrompt = document.getElementById('upgrade-prompt');
+    
+    // ============================================
+    // TAB SWITCHING
+    // ============================================
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+        
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab + '-tab').classList.remove('hidden');
+        
+        if (tab.dataset.tab === 'history') {
+          parent.postMessage({ pluginMessage: { type: 'get-history' } }, '*');
+        }
+      });
+    });
+    
+    // ============================================
     // COLLAPSIBLE
-    // ==========================================
+    // ============================================
     function toggleCollapsible(id) {
       const el = document.getElementById(id);
-      if (el) {
-        el.classList.toggle('open');
-        // Save preference
-        // Persist UI state via plugin settings in future (removed localStorage for Figma)
-      }
+      el.classList.toggle('open');
     }
-
-    // Restore collapsible state on load
-    function restoreCollapsibleState() {
-      // Collapsible state persistence removed (figma.clientStorage should be used instead).
-      // Keep defaults (open state defined in markup/CSS).
-    }
-
-    // ==========================================
-    // FRAME SELECTION
-    // ==========================================
-    function updateFrameCard(name, hasCache) {
-      const frameCard = document.getElementById('frame-card');
-      const frameName = document.getElementById('frame-name');
-      const frameStatus = document.getElementById('frame-status');
-      const analyzeBtn = document.getElementById('analyze-btn');
-
-      frameCard.classList.add('selected');
-      // Show ONLY the frame name, nothing else
-      frameName.textContent = name;
-      frameStatus.textContent = hasCache ? '✓ Has saved results' : 'Ready to analyze';
-      analyzeBtn.disabled = false;
+    
+    // ============================================
+    // ANALYZE
+    // ============================================
+    analyzeBtn.addEventListener('click', () => {
+      if (!hasFrame || isAnalyzing) return;
       
-      isFrameSelected = true;
-      currentFrameName = name;
-    }
-
-    function clearFrameCard() {
-      const frameCard = document.getElementById('frame-card');
-      const frameName = document.getElementById('frame-name');
-      const frameStatus = document.getElementById('frame-status');
-      const analyzeBtn = document.getElementById('analyze-btn');
-
-      frameCard.classList.remove('selected');
-      frameName.textContent = 'No Frame Selected';
-      frameStatus.textContent = 'Select a frame in Figma to analyze';
-      analyzeBtn.disabled = true;
+      const checks = {
+        colorContrast: document.getElementById('check-contrast').checked,
+        textSpacing: document.getElementById('check-spacing').checked,
+        lineHeight: document.getElementById('check-lineheight').checked,
+        paragraphSpacing: document.getElementById('check-paragraph').checked,
+        nonTextContrast: false
+      };
       
-      isFrameSelected = false;
-      currentFrameName = '';
-    }
-
-    // ==========================================
-    // ANALYSIS
-    // ==========================================
-    function analyzeFrame() {
-      if (!isFrameSelected || isAnalyzing) return;
-      
-      isAnalyzing = true;
-      
-      // Show progress
-      document.getElementById('progress-container').classList.remove('hidden');
-      document.getElementById('progress-fill').style.width = '0%';
-      document.getElementById('progress-text').textContent = 'Starting analysis...';
-      document.getElementById('results-container').innerHTML = '';
-      document.getElementById('analyze-btn').disabled = true;
-      
-      const checks = getEnabledChecks();
-      const showOverlay = document.getElementById('show-overlays')?.checked ?? true;
-      
-      console.log('Sending analyze message with checks:', checks);
-      
-      parent.postMessage({ 
-        pluginMessage: { 
+      parent.postMessage({
+        pluginMessage: {
           type: 'analyze',
           checks: checks,
-          showOverlay: showOverlay
-        } 
-      }, '*');
-    }
-
-    function getEnabledChecks() {
-      return {
-        colorContrast: document.getElementById('check-color-contrast')?.checked ?? true,
-        textSpacing: document.getElementById('check-text-spacing')?.checked ?? true,
-        lineHeight: document.getElementById('check-line-height')?.checked ?? true,
-        paragraphSpacing: document.getElementById('check-paragraph-spacing')?.checked ?? true,
-        nonTextContrast: document.getElementById('check-non-text-contrast')?.checked ?? true,
-      };
-    }
-
-    // ==========================================
-    // RESULTS DISPLAY
-    // ==========================================
-    function displayResults(groupedIssues, totalIssues, fromCache, cacheAge) {
-      const container = document.getElementById('results-container');
-      
-      // Hide progress
-      document.getElementById('progress-container').classList.add('hidden');
-      document.getElementById('analyze-btn').disabled = false;
-      isAnalyzing = false;
-
-      if (!groupedIssues || totalIssues === 0) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-state-icon">✅</div>
-            <h3>All Checks Passed!</h3>
-            <p>No accessibility issues found in this frame.</p>
-          </div>
-        `;
-        return;
-      }
-
-      // Count issues
-      let failCount = 0;
-      let warnCount = 0;
-      groupedIssues.forEach(group => {
-        group.issues.forEach(issue => {
-          if (issue.severity === 'fail') failCount++;
-          else warnCount++;
-        });
-      });
-
-      let html = `
-        <div class="card" style="margin-bottom: 16px;">
-          <div class="card-content" style="padding: 12px 16px;">
-            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-              <strong>Results:</strong>
-              ${failCount > 0 ? `<span class="badge badge-destructive">${failCount} Critical</span>` : ''}
-              ${warnCount > 0 ? `<span class="badge badge-warning">${warnCount} Warnings</span>` : ''}
-              ${fromCache ? `<span class="badge badge-secondary">💾 ${cacheAge}</span>` : ''}
-            </div>
-          </div>
-        </div>
-      `;
-
-      groupedIssues.forEach(group => {
-        group.issues.forEach((issue, idx) => {
-          html += `
-            <div class="issue-card ${issue.severity}">
-              <div class="issue-header">
-                <span class="issue-title">${issue.issueType}</span>
-                <span class="badge badge-${issue.severity === 'fail' ? 'destructive' : 'warning'}">
-                  ${issue.severity === 'fail' ? 'FAIL' : 'WARNING'}
-                </span>
-              </div>
-              <div class="issue-details">
-                <strong>Element:</strong> ${issue.elementName}<br>
-                <strong>Current:</strong> ${issue.currentValue}<br>
-                <strong>Required:</strong> ${issue.requiredValue}
-              </div>
-              ${issue.suggestion ? `
-                <div class="issue-details" style="margin-top: 8px;">
-                  💡 ${issue.suggestion}
-                </div>
-              ` : ''}
-              <div class="issue-fix">
-                <button class="btn btn-sm btn-secondary" onclick="jumpToElement('${issue.elementId}')">
-                  🔍 Find
-                </button>
-                ${issue.suggestedFix ? `
-                  <button class="btn btn-sm btn-primary" onclick="applyFix(${issue.index})">
-                    ✓ Fix
-                  </button>
-                ` : ''}
-              </div>
-            </div>
-          `;
-        });
-      });
-
-      container.innerHTML = html;
-    }
-
-    function jumpToElement(elementId) {
-      parent.postMessage({
-        pluginMessage: {
-          type: 'jump-to-element',
-          elementId: elementId
+          showOverlay: overlayToggle.checked
         }
       }, '*');
-    }
-
-    function applyFix(index) {
+    });
+    
+    // ============================================
+    // OVERLAY TOGGLE
+    // ============================================
+    overlayToggle.addEventListener('change', () => {
       parent.postMessage({
         pluginMessage: {
-          type: 'apply-fix',
-          issueIndex: index
+          type: 'toggle-overlay',
+          show: overlayToggle.checked
         }
       }, '*');
-    }
-
-    // ==========================================
-    // HISTORY
-    // ==========================================
-    function loadHistory() {
-      const container = document.getElementById('history-container');
-      
-      // Clear any existing timeout
-      if (historyLoadTimeout) {
-        clearTimeout(historyLoadTimeout);
-      }
-      
-      container.innerHTML = `
-        <div class="loading">
-          <div class="spinner"></div>
-          <p>Loading history...</p>
-        </div>
-      `;
-      
-      // Set a timeout to show "no history" if response doesn't come
-      historyLoadTimeout = setTimeout(() => {
-        console.log('History load timeout - showing empty state');
-        displayHistory([]);
-      }, 3000);
-      
-      parent.postMessage({ pluginMessage: { type: 'get-history' } }, '*');
-    }
-
-    function displayHistory(analyses) {
-      // Clear the timeout since we got a response
-      if (historyLoadTimeout) {
-        clearTimeout(historyLoadTimeout);
-        historyLoadTimeout = null;
-      }
-      
-      const container = document.getElementById('history-container');
-      
-      if (!analyses || analyses.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state" style="padding: 24px;">
-            <div class="empty-state-icon">📊</div>
-            <h3>No History Yet</h3>
-            <p>Analyzed frames will appear here</p>
-          </div>
-        `;
-        return;
-      }
-
-      let html = '';
-      analyses.forEach(item => {
-        const date = new Date(item.analyzedAt);
-        const timeAgo = getTimeAgo(date);
-        
-        html += `
-          <div class="history-item" onclick="selectHistoryFrame('${item.frameId}')">
-            <div class="history-item-header">
-              <span class="history-item-name">${item.frameName}</span>
-              <span class="history-item-time">${timeAgo}</span>
-            </div>
-            <div class="history-item-stats">
-              ${item.failCount > 0 ? `<span class="badge badge-destructive">${item.failCount} Critical</span>` : ''}
-              ${item.warnCount > 0 ? `<span class="badge badge-warning">${item.warnCount} Warnings</span>` : ''}
-              ${item.failCount === 0 && item.warnCount === 0 ? `<span class="badge badge-success">✓ Passed</span>` : ''}
-            </div>
-          </div>
-        `;
-      });
-
-      container.innerHTML = html;
-    }
-
-    function getTimeAgo(date) {
-      const seconds = Math.floor((new Date() - date) / 1000);
-      if (seconds < 60) return 'just now';
-      if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
-      if (seconds < 86400) return Math.floor(seconds / 3600) + 'h ago';
-      if (seconds < 604800) return Math.floor(seconds / 86400) + 'd ago';
-      return date.toLocaleDateString();
-    }
-
-    function selectHistoryFrame(frameId) {
-      parent.postMessage({ 
-        pluginMessage: { 
-          type: 'select-frame',
-          frameId: frameId 
-        } 
-      }, '*');
-      switchTab('analyze');
-    }
-
-    function clearHistory() {
-      if (confirm('Clear all analysis history?')) {
-        parent.postMessage({ pluginMessage: { type: 'clear-history' } }, '*');
-        displayHistory([]);
-        showToast('History Cleared', 'All history has been removed', 'success');
-      }
-    }
-
-    // ==========================================
-    // SETTINGS
-    // ==========================================
+    });
+    
+    // ============================================
+    // CLEAR HISTORY
+    // ============================================
+    document.getElementById('clear-history-btn').addEventListener('click', () => {
+      parent.postMessage({ pluginMessage: { type: 'clear-history' } }, '*');
+      document.getElementById('history-list').innerHTML = '';
+      document.getElementById('history-empty').classList.remove('hidden');
+      showToast('History cleared', 'success');
+    });
+    
+    // ============================================
+    // WCAG DESCRIPTION
+    // ============================================
     const wcagDescriptions = {
-      '2.0-AA': 'WCAG 2.0 AA: Basic standard, widely supported.',
-      '2.0-AAA': 'WCAG 2.0 AAA: Stricter contrast requirements.',
-      '2.1-AA': 'WCAG 2.1 AA: Recommended. Includes mobile accessibility.',
-      '2.1-AAA': 'WCAG 2.1 AAA: Enhanced mobile requirements.',
-      '2.2-AA': 'WCAG 2.2 AA: Latest standard (2023).',
-      '2.2-AAA': 'WCAG 2.2 AAA: Strictest requirements.',
+      '2.0-AA': 'WCAG 2.0 AA is the most widely supported standard.',
+      '2.0-AAA': 'WCAG 2.0 AAA has stricter contrast requirements.',
+      '2.1-AA': 'WCAG 2.1 AA includes mobile and touch accessibility.',
+      '2.1-AAA': 'WCAG 2.1 AAA is the highest level for mobile.',
+      '2.2-AA': 'WCAG 2.2 AA (2023) includes focus appearance.',
+      '2.2-AAA': 'WCAG 2.2 AAA is the strictest standard available.'
     };
-
-    function updateWCAGDescription() {
+    
+    function updateWcagDescription() {
       const version = document.getElementById('wcag-version').value;
       const level = document.getElementById('wcag-level').value;
-      const key = `${version}-${level}`;
-      document.getElementById('wcag-description').textContent = wcagDescriptions[key] || '';
+      document.getElementById('wcag-description').textContent = wcagDescriptions[`${version}-${level}`];
     }
-
-    function updateOpacityValue(value) {
-      document.getElementById('opacity-value').textContent = `${value}%`;
+    
+    document.getElementById('wcag-version').addEventListener('change', updateWcagDescription);
+    document.getElementById('wcag-level').addEventListener('change', updateWcagDescription);
+    
+    // ============================================
+    // MESSAGE HANDLER
+    // ============================================
+    window.onmessage = (event) => {
+      const msg = event.data.pluginMessage;
+      if (!msg) return;
+      
+      switch (msg.type) {
+        case 'init':
+          userLicense = msg.license;
+          updateUI();
+          break;
+          
+        case 'frame-selected':
+          hasFrame = true;
+          frameCard.classList.remove('hidden');
+          noFrameCard.classList.add('hidden');
+          frameName.textContent = msg.name;
+          analyzeBtn.disabled = false;
+          break;
+          
+        case 'no-frame':
+          hasFrame = false;
+          frameCard.classList.add('hidden');
+          noFrameCard.classList.remove('hidden');
+          analyzeBtn.disabled = true;
+          resultsSection.classList.add('hidden');
+          successState.classList.add('hidden');
+          break;
+          
+        case 'started':
+          isAnalyzing = true;
+          analyzeBtn.disabled = true;
+          progress.classList.remove('hidden');
+          resultsSection.classList.add('hidden');
+          successState.classList.add('hidden');
+          upgradePrompt.classList.add('hidden');
+          animateProgress();
+          break;
+          
+        case 'results':
+          isAnalyzing = false;
+          analyzeBtn.disabled = false;
+          progress.classList.add('hidden');
+          
+          currentIssues = msg.issues || [];
+          
+          if (currentIssues.length === 0) {
+            resultsSection.classList.add('hidden');
+            successState.classList.remove('hidden');
+          } else {
+            resultsSection.classList.remove('hidden');
+            successState.classList.add('hidden');
+            renderIssues(currentIssues);
+          }
+          break;
+          
+        case 'history':
+          renderHistory(msg.data || []);
+          break;
+          
+        case 'fixed':
+          const card = document.querySelector(`[data-index="${msg.index}"]`);
+          if (card) {
+            card.classList.add('fixed');
+            const fixBtn = card.querySelector('.fix-btn');
+            if (fixBtn) {
+              fixBtn.innerHTML = `
+                <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M20 6 9 17l-5-5"/>
+                </svg>
+                Fixed
+              `;
+              fixBtn.disabled = true;
+            }
+          }
+          showToast('Fix applied!', 'success');
+          break;
+          
+        case 'license-updated':
+          userLicense = msg.license;
+          updateUI();
+          hideUpgradeModal();
+          hideEmailModal();
+          showToast('🎉 Upgrade successful!', 'success');
+          break;
+          
+        case 'usage-updated':
+          updateUsageBar(msg.usage);
+          break;
+          
+        case 'upgrade-required':
+          upgradePrompt.classList.remove('hidden');
+          break;
+      }
+    };
+    
+    // ============================================
+    // UPDATE UI BASED ON LICENSE
+    // ============================================
+    function updateUI() {
+      if (!userLicense) return;
+      
+      // Update plan badge
+      planBadge.textContent = userLicense.plan.charAt(0).toUpperCase() + userLicense.plan.slice(1);
+      planBadge.className = `plan-badge ${userLicense.plan}`;
+      
+      // Update usage bar
+      if (userLicense.plan === 'free') {
+        usageBar.classList.remove('hidden');
+        updateUsageBar({
+          used: userLicense.analysesThisMonth,
+          limit: 10
+        });
+      } else {
+        usageBar.classList.add('hidden');
+      }
+      
+      // Update settings section
+      const planName = document.getElementById('current-plan-name');
+      const planDesc = document.getElementById('current-plan-desc');
+      const upgradeBtn = document.getElementById('upgrade-settings-btn');
+      
+      if (userLicense.plan === 'free') {
+        planName.textContent = 'Free Plan';
+        planDesc.textContent = `${userLicense.analysesThisMonth}/10 analyses used this month`;
+        upgradeBtn.classList.remove('hidden');
+      } else if (userLicense.plan === 'pro') {
+        planName.textContent = 'Pro Plan';
+        planDesc.textContent = 'Unlimited analyses';
+        upgradeBtn.textContent = 'Manage';
+      } else if (userLicense.plan === 'team') {
+        planName.textContent = 'Team Plan';
+        planDesc.textContent = '5 seats • Unlimited analyses';
+        upgradeBtn.textContent = 'Manage';
+      }
     }
-
-    function loadSettings() {
-      parent.postMessage({ pluginMessage: { type: 'get-settings' } }, '*');
-    }
-
-    function populateSettings(settings) {
-      if (!settings) return;
-
-      if (settings.wcag) {
-        const versionSelect = document.getElementById('wcag-version');
-        const levelSelect = document.getElementById('wcag-level');
-        if (versionSelect) versionSelect.value = settings.wcag.version || '2.1';
-        if (levelSelect) levelSelect.value = settings.wcag.level || 'AA';
-        updateWCAGDescription();
-      }
-
-      if (settings.checks) {
-        document.getElementById('check-color-contrast').checked = settings.checks.colorContrast !== false;
-        document.getElementById('check-text-spacing').checked = settings.checks.textSpacing !== false;
-        document.getElementById('check-line-height').checked = settings.checks.lineHeight !== false;
-        document.getElementById('check-paragraph-spacing').checked = settings.checks.paragraphSpacing !== false;
-        document.getElementById('check-non-text-contrast').checked = settings.checks.nonTextContrast !== false;
-      }
-
-      if (settings.display) {
-        document.getElementById('show-overlays').checked = settings.display.showOverlays !== false;
-        document.getElementById('group-by-element').checked = settings.display.groupByElement !== false;
-        document.getElementById('show-only-failures').checked = settings.display.showOnlyFailures === true;
-        
-        const opacity = settings.display.overlayOpacity || 70;
-        document.getElementById('overlay-opacity').value = opacity;
-        updateOpacityValue(opacity);
-      }
-
-      if (settings.cache) {
-        document.getElementById('cache-ttl').value = settings.cache.ttlDays || 7;
+    
+    function updateUsageBar(usage) {
+      const percentage = (usage.used / usage.limit) * 100;
+      document.getElementById('usage-text').textContent = `${usage.used}/${usage.limit} analyses used`;
+      document.getElementById('usage-fill').style.width = `${percentage}%`;
+      
+      if (percentage >= 80) {
+        usageBar.classList.add('warning');
+      } else {
+        usageBar.classList.remove('warning');
       }
     }
-
-    function saveSettings() {
-      const settings = {
-        wcag: {
-          version: document.getElementById('wcag-version').value,
-          level: document.getElementById('wcag-level').value,
+    
+    // ============================================
+    // RENDER ISSUES
+    // ============================================
+    function renderIssues(issues) {
+      const fails = issues.filter(i => i.severity === 'fail').length;
+      const warnings = issues.filter(i => i.severity === 'warning').length;
+      
+      document.getElementById('results-title').textContent = `${issues.length} Issues Found`;
+      document.getElementById('fail-count').textContent = `${fails} Fails`;
+      document.getElementById('warning-count').textContent = `${warnings} Warnings`;
+      
+      issuesList.innerHTML = issues.map((issue, index) => `
+        <div class="issue-card" data-index="${index}">
+          <div class="issue-header" onclick="toggleIssue(this)">
+            <div class="issue-type">
+              <span class="issue-indicator ${issue.severity}"></span>
+              ${issue.type}
+            </div>
+            <svg class="icon icon-sm issue-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </div>
+          <div class="issue-body">
+            <div class="issue-detail">
+              <span class="issue-detail-label">Element</span>
+              <span class="issue-detail-value">${escapeHtml(issue.elementName)}</span>
+            </div>
+            <div class="issue-detail">
+              <span class="issue-detail-label">Current</span>
+              <span class="issue-detail-value">${issue.current}</span>
+            </div>
+            <div class="issue-detail">
+              <span class="issue-detail-label">Required</span>
+              <span class="issue-detail-value">${issue.required}</span>
+            </div>
+            <div class="issue-actions">
+              <button class="btn btn-outline btn-sm" onclick="jumpToElement('${issue.elementId}')">
+                <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M15 10l-4 4l6 6l4 -16l-16 4l6 6l4 -4"/>
+                </svg>
+                Jump to
+              </button>
+              ${issue.fix ? `
+                <button class="btn btn-primary btn-sm fix-btn" onclick="applyFix(${index})">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+                  </svg>
+                  Fix
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    // ============================================
+    // RENDER HISTORY
+    // ============================================
+    function renderHistory(items) {
+      const list = document.getElementById('history-list');
+      const empty = document.getElementById('history-empty');
+      
+      if (!items || items.length === 0) {
+        list.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+      
+      empty.classList.add('hidden');
+      list.innerHTML = items.map(item => `
+        <div class="history-item" onclick="selectFrame('${item.frameId}')">
+          <div class="history-icon">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <path d="M3 9h18"/>
+              <path d="M9 21V9"/>
+            </svg>
+          </div>
+          <div class="history-info">
+            <div class="history-name">${escapeHtml(item.frameName || 'Untitled')}</div>
+            <div class="history-meta">${timeAgo(item.analyzedAt)}</div>
+          </div>
+          <span class="history-issues">${item.issueCount || 0} issues</span>
+        </div>
+      `).join('');
+    }
+    
+    // ============================================
+    // MODAL FUNCTIONS
+    // ============================================
+    function showUpgradeModal() {
+      document.getElementById('upgrade-modal').classList.remove('hidden');
+    }
+    
+    function hideUpgradeModal() {
+      document.getElementById('upgrade-modal').classList.add('hidden');
+    }
+    
+    function showEmailModal() {
+      document.getElementById('email-modal').classList.remove('hidden');
+      document.getElementById('upgrade-modal').classList.add('hidden');
+      
+      const pricing = PRICING[selectedPlan][billingCycle];
+      document.getElementById('checkout-plan-name').textContent = 
+        `${selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)} ${billingCycle.charAt(0).toUpperCase() + billingCycle.slice(1)}`;
+      document.getElementById('checkout-amount').textContent = 
+        `${pricing.inr}/${pricing.period}`;
+    }
+    
+    function hideEmailModal() {
+      document.getElementById('email-modal').classList.add('hidden');
+    }
+    
+    function toggleBilling(cycle) {
+      billingCycle = cycle;
+      
+      document.querySelectorAll('.pricing-toggle-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.billing === cycle);
+      });
+      
+      // Update prices
+      const proPricing = PRICING.pro[cycle];
+      const teamPricing = PRICING.team[cycle];
+      
+      document.getElementById('pro-price').textContent = proPricing.display.replace('$', '');
+      document.getElementById('pro-subtitle').textContent = 
+        cycle === 'annual' ? `Billed annually • ${proPricing.savings}` : 'Billed monthly';
+      
+      document.getElementById('team-price').textContent = teamPricing.display.replace('$', '');
+      document.getElementById('team-subtitle').textContent = 
+        cycle === 'annual' 
+          ? `5 seats • ${teamPricing.savings}` 
+          : `5 seats included • $${(22/5).toFixed(2)}/seat`;
+    }
+    
+    function selectPlan(plan) {
+      selectedPlan = plan;
+    }
+    
+    function startPayment(plan) {
+      selectedPlan = plan;
+      showEmailModal();
+    }
+    
+    // ============================================
+    // RAZORPAY PAYMENT
+    // ============================================
+    function proceedToPayment() {
+      const email = document.getElementById('checkout-email').value;
+      
+      if (!email || !email.includes('@')) {
+        showToast('Please enter a valid email', 'error');
+        return;
+      }
+      
+      const pricing = PRICING[selectedPlan][billingCycle];
+      
+      const options = {
+        key: RAZORPAY_KEY,
+        amount: pricing.amount,
+        currency: 'INR',
+        name: 'A11y Audit Pro',
+        description: `${selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)} Plan - ${billingCycle}`,
+        image: 'https://i.imgur.com/3g7nmJC.png',
+        prefill: {
+          email: email
         },
-        checks: getEnabledChecks(),
-        display: {
-          showOverlays: document.getElementById('show-overlays').checked,
-          groupByElement: document.getElementById('group-by-element').checked,
-          showOnlyFailures: document.getElementById('show-only-failures').checked,
-          overlayOpacity: parseInt(document.getElementById('overlay-opacity').value),
+        theme: {
+          color: '#2563eb'
         },
-        cache: {
-          ttlDays: parseInt(document.getElementById('cache-ttl').value),
+        handler: function(response) {
+          // Payment successful
+          console.log('Payment Success:', response);
+          
+          // Notify plugin of successful payment
+          parent.postMessage({
+            pluginMessage: {
+              type: 'payment-success',
+              plan: selectedPlan,
+              subscriptionId: response.razorpay_payment_id,
+              email: email
+            }
+          }, '*');
+          
+          showToast('Payment successful!', 'success');
         },
+        modal: {
+          ondismiss: function() {
+            console.log('Payment cancelled');
+          }
+        }
       };
       
-      parent.postMessage({ 
-        pluginMessage: { 
-          type: 'save-settings',
-          settings: settings 
-        } 
-      }, '*');
-      
-      showToast('Settings Saved', 'Your preferences have been updated', 'success');
-    }
-
-    function clearAllCache() {
-      if (confirm('Clear all saved analysis results? This will make future analyses start fresh.')) {
-        parent.postMessage({ pluginMessage: { type: 'clear-all-cache' } }, '*');
-        showToast('Data Cleared', 'All saved results have been removed', 'success');
+      try {
+        const rzp = new Razorpay(options);
+        rzp.on('payment.failed', function(response) {
+          console.error('Payment Failed:', response.error);
+          showToast('Payment failed. Please try again.', 'error');
+        });
+        rzp.open();
+      } catch (error) {
+        console.error('Razorpay error:', error);
+        showToast('Unable to initialize payment. Please try again.', 'error');
       }
     }
-
-    // ==========================================
-    // TOAST
-    // ==========================================
-    function showToast(title, message, type = 'info') {
+    
+    // ============================================
+    // HELPERS
+    // ============================================
+    function toggleIssue(header) {
+      header.parentElement.classList.toggle('open');
+    }
+    
+    function jumpToElement(id) {
+      parent.postMessage({ pluginMessage: { type: 'jump', id: id } }, '*');
+    }
+    
+    function applyFix(index) {
+      parent.postMessage({ pluginMessage: { type: 'apply-fix', index: index } }, '*');
+    }
+    
+    function selectFrame(id) {
+      parent.postMessage({ pluginMessage: { type: 'jump', id: id } }, '*');
+    }
+    
+    function timeAgo(timestamp) {
+      if (!timestamp) return '';
+      const diff = Date.now() - timestamp;
+      const mins = Math.floor(diff / 60000);
+      const hrs = Math.floor(mins / 60);
+      const days = Math.floor(hrs / 24);
+      if (days > 0) return days + 'd ago';
+      if (hrs > 0) return hrs + 'h ago';
+      if (mins > 0) return mins + 'm ago';
+      return 'just now';
+    }
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    function animateProgress() {
+      let width = 0;
+      const interval = setInterval(() => {
+        if (!isAnalyzing || width >= 90) {
+          clearInterval(interval);
+          return;
+        }
+        width += Math.random() * 15;
+        progressFill.style.width = Math.min(width, 90) + '%';
+      }, 200);
+    }
+    
+    function showToast(message, type = 'default') {
       const container = document.getElementById('toast-container');
-      const icons = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
-      
       const toast = document.createElement('div');
-      toast.className = `toast toast-${type}`;
+      toast.className = `toast ${type}`;
       toast.innerHTML = `
-        <div class="toast-icon">${icons[type] || 'ℹ'}</div>
-        <div class="toast-content">
-          <div class="toast-title">${title}</div>
-          <div class="toast-message">${message}</div>
-        </div>
-        <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+        <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          ${type === 'success' 
+            ? '<path d="M20 6 9 17l-5-5"/>' 
+            : type === 'error'
+            ? '<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>'
+            : '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>'}
+        </svg>
+        ${message}
       `;
       
       container.appendChild(toast);
-      setTimeout(() => toast.remove(), 4000);
-    }
-
-    // ==========================================
-    // MESSAGE HANDLER
-    // ==========================================
-    window.addEventListener('message', (event) => {
-      const msg = event.data.pluginMessage;
-      if (!msg) return;
-
-      console.log('UI received:', msg.type);
-
-      switch (msg.type) {
-        case 'frame-selected':
-          // Display ONLY the frame name
-          updateFrameCard(msg.frameName, msg.hasCache);
-          break;
-
-        case 'frame-deselected':
-        case 'selection-error':
-          clearFrameCard();
-          if (msg.message) {
-            showToast('Selection', msg.message, 'warning');
-          }
-          break;
-
-        case 'analysis-started':
-          document.getElementById('progress-container').classList.remove('hidden');
-          document.getElementById('progress-fill').style.width = '0%';
-          document.getElementById('progress-text').textContent = 'Analyzing...';
-          break;
-
-        case 'analysis-progress':
-          document.getElementById('progress-fill').style.width = (msg.progress || 0) + '%';
-          document.getElementById('progress-text').textContent = `Checking ${msg.current}/${msg.total} elements`;
-          break;
-
-        case 'analysis-complete':
-          displayResults(msg.issues, msg.totalIssues, msg.fromCache, msg.cacheAge);
-          break;
-
-        case 'analysis-error':
-          document.getElementById('progress-container').classList.add('hidden');
-          document.getElementById('analyze-btn').disabled = false;
-          isAnalyzing = false;
-          showToast('Error', msg.message || 'Analysis failed', 'error');
-          break;
-
-        case 'settings-loaded':
-          populateSettings(msg.settings);
-          break;
-
-        case 'settings-saved':
-          // Already showing toast in saveSettings()
-          break;
-
-        case 'history-loaded':
-          displayHistory(msg.analyses);
-          break;
-
-        case 'history-cleared':
-          displayHistory([]);
-          break;
-
-        case 'cache-cleared':
-          showToast('Data Cleared', 'Saved results have been removed', 'success');
-          break;
-
-        case 'fix-applied':
-          showToast('Fix Applied', msg.message || 'The fix was applied successfully', 'success');
-          break;
-
-        case 'error':
-          showToast('Error', msg.message || 'Something went wrong', 'error');
-          break;
-      }
-    });
-
-    // ==========================================
-    // OVERLAY TOGGLE
-    // ==========================================
-    let showOverlay = true;
-
-    function toggleOverlay(checked) {
-      showOverlay = checked;
       
-      // Sync with settings checkbox
-      const settingsCheckbox = document.getElementById('show-overlays');
-      if (settingsCheckbox) {
-        settingsCheckbox.checked = checked;
-      }
-      
-      // Preference persistence handled when user saves settings (via Save Settings)
-      
-      // Tell plugin to show/hide overlays
-      parent.postMessage({ 
-        pluginMessage: { 
-          type: 'toggle-overlay',
-          show: checked
-        } 
-      }, '*');
+      setTimeout(() => {
+        toast.style.animation = 'slideIn 0.3s ease reverse';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
     }
-
-    function restoreOverlayState() {
-      // Overlay state will be initialized from plugin settings via `settings-loaded` message.
-    }
-
-    // Sync settings checkbox with analyze page toggle
-    document.getElementById('show-overlays')?.addEventListener('change', function(e) {
-      const toggle = document.getElementById('show-overlay-toggle');
-      if (toggle) toggle.checked = e.target.checked;
-      showOverlay = e.target.checked;
-      // Persistence will occur when user clicks Save Settings
-    });
-
-    // ==========================================
-    // INIT
-    // ==========================================
-    console.log('A11y Audit Pro UI initialized');
-    updateWCAGDescription();
-    // Request saved settings from plugin (figma.clientStorage -> code.ts)
-    try { loadSettings(); } catch (e) { /* ignore if unavailable */ }
-    restoreCollapsibleState();
-    restoreOverlayState();
+    
+    // ============================================
+    // INITIALIZE
+    // ============================================
+    updateWcagDescription();
   </script>
 </body>
 </html>

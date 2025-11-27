@@ -8,8 +8,11 @@
   "documentAccess": "dynamic-page",
   "networkAccess": {
     "allowedDomains": [
-      "https://*.supabase.co",
-      "https://api.stripe.com"
+      "https://*.razorpay.com",
+      "https://api.razorpay.com",
+      "https://checkout.razorpay.com",
+      "https://lumberjack.razorpay.com",
+      "https://cdn.razorpay.com"
     ]
   }
 }
