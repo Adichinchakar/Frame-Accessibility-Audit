@@ -445,6 +445,21 @@
       font-size: 14px;
     }
     
+    .btn-icon {
+      padding: 6px;
+      background: transparent;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      color: var(--muted-foreground);
+      transition: all 0.15s;
+    }
+    
+    .btn-icon:hover {
+      background: var(--muted);
+      color: var(--destructive);
+    }
+    
     /* ============================================
        CHECKBOX & TOGGLE
        ============================================ */
@@ -592,6 +607,11 @@
     .badge-success {
       background: #f0fdf4;
       color: #166534;
+    }
+    
+    .badge-muted {
+      background: var(--muted);
+      color: var(--muted-foreground);
     }
     
     /* ============================================
@@ -844,6 +864,128 @@
       display: flex;
       align-items: flex-start;
       gap: 10px;
+    }
+    
+    /* ============================================
+       TEAM MANAGEMENT STYLES
+       ============================================ */
+    .team-member-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 8px;
+      transition: all 0.15s;
+    }
+    
+    .team-member-item:hover {
+      background: var(--muted);
+    }
+    
+    .team-member-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--brand-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    
+    .team-member-info {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .team-member-email {
+      font-size: 13px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .team-member-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 2px;
+    }
+    
+    .team-member-badge {
+      padding: 2px 8px;
+      border-radius: 100px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    
+    .team-member-badge.admin {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+    
+    .team-member-badge.pending {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    
+    .team-member-badge.active {
+      background: #dcfce7;
+      color: #166534;
+    }
+    
+    .seats-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    
+    .seats-count {
+      font-size: 13px;
+      color: var(--muted-foreground);
+    }
+    
+    .seats-progress {
+      height: 6px;
+      background: var(--muted);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    
+    .seats-progress-fill {
+      height: 100%;
+      background: var(--brand-primary);
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+    
+    .seats-warning {
+      background: #fef3c7;
+      border: 1px solid #fcd34d;
+      border-radius: var(--radius);
+      padding: 12px;
+      font-size: 12px;
+      color: #92400e;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    
+    .team-empty {
+      text-align: center;
+      padding: 24px;
+      color: var(--muted-foreground);
+      font-size: 13px;
     }
     
     /* ============================================
@@ -1623,6 +1765,59 @@
         </div>
       </div>
       
+      <!-- Team Management Section (Team users only) -->
+      <div class="settings-section hidden" id="team-section">
+        <div class="settings-title">Team Management</div>
+        <div class="card">
+          <div class="card-content" style="padding-top: 16px;">
+            <!-- Seats Header -->
+            <div class="seats-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+                <span class="settings-label">Team Seats</span>
+              </div>
+              <span class="seats-count" id="seats-count">0/5 used</span>
+            </div>
+            
+            <!-- Seats Progress -->
+            <div class="seats-progress">
+              <div class="seats-progress-fill" id="seats-fill" style="width: 20%"></div>
+            </div>
+            
+            <!-- Seats Warning (when full) -->
+            <div class="seats-warning hidden" id="seats-warning">
+              <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                <path d="M12 9v4"/>
+                <path d="M12 17h.01"/>
+              </svg>
+              All seats used. Remove a member to add someone new.
+            </div>
+            
+            <!-- Team Members List -->
+            <div id="team-members-list">
+              <!-- Members will be rendered here -->
+            </div>
+            
+            <!-- Invite Button -->
+            <button class="btn btn-outline" id="invite-btn" onclick="showInviteModal()" style="width: 100%; margin-top: 12px;">
+              <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="8.5" cy="7" r="4"/>
+                <line x1="20" y1="8" x2="20" y2="14"/>
+                <line x1="23" y1="11" x2="17" y2="11"/>
+              </svg>
+              Invite Team Member
+            </button>
+          </div>
+        </div>
+      </div>
+      
       <!-- Data Management -->
       <div class="settings-section">
         <div class="settings-title">Data Management</div>
@@ -1854,12 +2049,95 @@
       </div>
     </div>
   </div>
+  
+  <!-- ============================================
+       INVITE MODAL
+       ============================================ -->
+  <div class="modal-overlay hidden" id="invite-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Invite Team Member</div>
+        <button class="modal-close" onclick="hideInviteModal()">
+          <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6 6 18"/>
+            <path d="m6 6 12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="input-group">
+          <label class="input-label">Team Member's Email</label>
+          <input type="email" class="input" id="invite-email" placeholder="colleague@company.com">
+          <div class="input-hint">They'll get access when they open the plugin</div>
+        </div>
+        
+        <div class="info-box" style="margin-bottom: 16px;">
+          <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 16v-4"/>
+            <path d="M12 8h.01"/>
+          </svg>
+          <div>
+            <strong>What happens next?</strong><br>
+            When they open A11y Audit Pro with this email, they'll automatically join your team.
+          </div>
+        </div>
+        
+        <button class="btn btn-gradient btn-lg" onclick="inviteTeamMember()" id="send-invite-btn">
+          <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 2L11 13"/>
+            <path d="M22 2l-7 20-4-9-9-4 20-7z"/>
+          </svg>
+          Send Invitation
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- ============================================
+       REMOVE MEMBER MODAL
+       ============================================ -->
+  <div class="modal-overlay hidden" id="remove-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Remove Team Member</div>
+        <button class="modal-close" onclick="hideRemoveModal()">
+          <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6 6 18"/>
+            <path d="m6 6 12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 16px;">Are you sure you want to remove <strong id="remove-email"></strong> from your team?</p>
+        
+        <div class="info-box" style="margin-bottom: 16px; background: #fef2f2; border-color: #fecaca; color: #b91c1c;">
+          <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+            <path d="M12 9v4"/>
+            <path d="M12 17h.01"/>
+          </svg>
+          <span>They will immediately lose access to team features.</span>
+        </div>
+        
+        <div style="display: flex; gap: 12px;">
+          <button class="btn btn-outline" onclick="hideRemoveModal()" style="flex: 1;">
+            Cancel
+          </button>
+          <button class="btn" onclick="confirmRemoveMember()" id="confirm-remove-btn" style="flex: 1; background: var(--destructive); color: white;">
+            Remove
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script>
     // ============================================
     // CONFIGURATION
     // ============================================
     const RAZORPAY_KEY = 'rzp_test_RkmwYLTth09O1G';
+    const SUPABASE_URL = 'YOUR_SUPABASE_URL'; // Update after Supabase setup
     
     const PRICING = {
       pro: {
@@ -1881,6 +2159,8 @@
     let userLicense = null;
     let selectedPlan = 'pro';
     let billingCycle = 'monthly';
+    let teamData = null;
+    let memberToRemove = null;
     
     // ============================================
     // ELEMENTS
@@ -1912,6 +2192,10 @@
         
         if (tab.dataset.tab === 'history') {
           parent.postMessage({ pluginMessage: { type: 'get-history' } }, '*');
+        }
+        
+        if (tab.dataset.tab === 'settings' && userLicense?.plan === 'team' && userLicense?.teamRole === 'admin') {
+          parent.postMessage({ pluginMessage: { type: 'load-team' } }, '*');
         }
       });
     });
@@ -2084,6 +2368,27 @@
         case 'upgrade-required':
           upgradePrompt.classList.remove('hidden');
           break;
+          
+        case 'team-loaded':
+          teamData = msg.data;
+          renderTeamUI();
+          break;
+          
+        case 'member-invited':
+          hideInviteModal();
+          showToast('Invitation sent!', 'success');
+          parent.postMessage({ pluginMessage: { type: 'load-team' } }, '*');
+          break;
+          
+        case 'member-removed':
+          hideRemoveModal();
+          showToast('Member removed', 'success');
+          parent.postMessage({ pluginMessage: { type: 'load-team' } }, '*');
+          break;
+          
+        case 'team-invitation':
+          showTeamInvitationPrompt(msg.teamName);
+          break;
       }
     };
     
@@ -2112,19 +2417,29 @@
       const planName = document.getElementById('current-plan-name');
       const planDesc = document.getElementById('current-plan-desc');
       const upgradeBtn = document.getElementById('upgrade-settings-btn');
+      const teamSection = document.getElementById('team-section');
       
       if (userLicense.plan === 'free') {
         planName.textContent = 'Free Plan';
         planDesc.textContent = `${userLicense.analysesThisMonth}/10 analyses used this month`;
         upgradeBtn.classList.remove('hidden');
+        teamSection.classList.add('hidden');
       } else if (userLicense.plan === 'pro') {
         planName.textContent = 'Pro Plan';
         planDesc.textContent = 'Unlimited analyses';
         upgradeBtn.textContent = 'Manage';
+        teamSection.classList.add('hidden');
       } else if (userLicense.plan === 'team') {
         planName.textContent = 'Team Plan';
         planDesc.textContent = '5 seats • Unlimited analyses';
         upgradeBtn.textContent = 'Manage';
+        
+        // Show team section for admins
+        if (userLicense.teamRole === 'admin') {
+          teamSection.classList.remove('hidden');
+        } else {
+          teamSection.classList.add('hidden');
+        }
       }
     }
     
@@ -2137,6 +2452,123 @@
         usageBar.classList.add('warning');
       } else {
         usageBar.classList.remove('warning');
+      }
+    }
+    
+    // ============================================
+    // TEAM MANAGEMENT
+    // ============================================
+    function renderTeamUI() {
+      if (!teamData) return;
+      
+      const { team, members } = teamData;
+      
+      // Update seats
+      document.getElementById('seats-count').textContent = `${team.usedSeats}/${team.totalSeats} used`;
+      document.getElementById('seats-fill').style.width = `${(team.usedSeats / team.totalSeats) * 100}%`;
+      
+      // Show warning if full
+      const warning = document.getElementById('seats-warning');
+      const inviteBtn = document.getElementById('invite-btn');
+      if (team.usedSeats >= team.totalSeats) {
+        warning.classList.remove('hidden');
+        inviteBtn.disabled = true;
+      } else {
+        warning.classList.add('hidden');
+        inviteBtn.disabled = false;
+      }
+      
+      // Render members
+      const list = document.getElementById('team-members-list');
+      if (!members || members.length === 0) {
+        list.innerHTML = '<div class="team-empty">No team members yet</div>';
+        return;
+      }
+      
+      list.innerHTML = members.map(member => `
+        <div class="team-member-item">
+          <div class="team-member-avatar">${getInitials(member.email)}</div>
+          <div class="team-member-info">
+            <div class="team-member-email">${escapeHtml(member.email)}</div>
+            <div class="team-member-status">
+              <span class="team-member-badge ${member.role}">${member.role}</span>
+              ${member.status === 'pending' ? '<span class="team-member-badge pending">Pending</span>' : ''}
+            </div>
+          </div>
+          ${member.role !== 'admin' ? `
+            <button class="btn-icon" onclick="showRemoveModal('${escapeHtml(member.email)}')">
+              <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 6h18"/>
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+              </svg>
+            </button>
+          ` : ''}
+        </div>
+      `).join('');
+    }
+    
+    function getInitials(email) {
+      if (!email) return '??';
+      const parts = email.split('@')[0].split(/[._-]/);
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+      }
+      return email.substring(0, 2).toUpperCase();
+    }
+    
+    function showInviteModal() {
+      document.getElementById('invite-modal').classList.remove('hidden');
+      document.getElementById('invite-email').value = '';
+      document.getElementById('invite-email').focus();
+    }
+    
+    function hideInviteModal() {
+      document.getElementById('invite-modal').classList.add('hidden');
+    }
+    
+    function inviteTeamMember() {
+      const email = document.getElementById('invite-email').value.trim();
+      if (!email || !email.includes('@')) {
+        showToast('Please enter a valid email', 'error');
+        return;
+      }
+      
+      parent.postMessage({
+        pluginMessage: {
+          type: 'invite-member',
+          email: email
+        }
+      }, '*');
+    }
+    
+    function showRemoveModal(email) {
+      memberToRemove = email;
+      document.getElementById('remove-email').textContent = email;
+      document.getElementById('remove-modal').classList.remove('hidden');
+    }
+    
+    function hideRemoveModal() {
+      document.getElementById('remove-modal').classList.add('hidden');
+      memberToRemove = null;
+    }
+    
+    function confirmRemoveMember() {
+      if (!memberToRemove) return;
+      
+      parent.postMessage({
+        pluginMessage: {
+          type: 'remove-member',
+          email: memberToRemove
+        }
+      }, '*');
+    }
+    
+    function showTeamInvitationPrompt(teamName) {
+      if (confirm(`You've been invited to join ${teamName}! Accept invitation?`)) {
+        parent.postMessage({
+          pluginMessage: { type: 'accept-invitation' }
+        }, '*');
       }
     }
     
