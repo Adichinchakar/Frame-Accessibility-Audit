@@ -1463,6 +1463,85 @@
     .secure-badge svg {
       color: var(--success);
     }
+
+    /* ============================================ */
+    /* FOCUSED ISSUE VIEW STYLES (inserted) */
+    /* ============================================ */
+    #focused-issue-view {
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    #focused-issue-view .issue-detail {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #focused-issue-view .issue-detail-label {
+      font-size: 12px;
+      color: var(--muted-foreground);
+      font-weight: 500;
+    }
+
+    #focused-issue-view .issue-detail-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--foreground);
+      text-align: right;
+    }
+
+    #focused-issue-view .card {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    #focused-issue-view .btn-gradient {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-size: 14px;
+      padding: 14px 20px;
+      transition: all 0.2s;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    #focused-issue-view .btn-gradient:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    #focused-issue-view .btn-gradient:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    #focused-issue-view .issue-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    #focused-issue-view .issue-indicator.fail {
+      background: var(--destructive);
+    }
+
+    #focused-issue-view .issue-indicator.warning {
+      background: var(--warning);
+    }
   </style>
 </head>
 <body>
@@ -1672,6 +1751,89 @@
         <div id="issues-list"></div>
       </div>
       
+      <!-- Focused Issue View -->
+      <!-- ============================================ -->
+      <div id="focused-issue-view" class="hidden" style="margin-top: 20px;">
+        <!-- Header -->
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+          <span style="font-size: 13px; color: var(--muted-foreground); font-weight: 500;" id="focused-counter">
+            Issue 1 of 10
+          </span>
+          <button class="btn-icon" onclick="exitFocusedMode()" title="Back to list">
+            <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6 6 18"/>
+              <path d="m6 6 12 12"/>
+            </svg>
+          </button>
+        </div>
+        
+        <!-- Issue Card -->
+        <div class="card">
+          <div class="card-header" style="background: var(--muted); border-bottom: 1px solid var(--border);">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span class="issue-indicator" id="focused-indicator"></span>
+              <h3 style="font-size: 15px; font-weight: 600; margin: 0;" id="focused-type">Color Contrast</h3>
+            </div>
+          </div>
+          
+          <div class="card-content" style="padding-top: 16px;">
+            <!-- Issue Details -->
+            <div class="issue-detail" style="padding: 8px 0; border-bottom: 1px solid var(--border);">
+              <span class="issue-detail-label">Element</span>
+              <span class="issue-detail-value" id="focused-element">label-text</span>
+            </div>
+            
+            <div class="issue-detail" style="padding: 8px 0; border-bottom: 1px solid var(--border);">
+              <span class="issue-detail-label">Type</span>
+              <span class="issue-detail-value" id="focused-element-type">Text Layer (Button)</span>
+            </div>
+            
+            <div class="issue-detail" style="padding: 8px 0; border-bottom: 1px solid var(--border);">
+              <span class="issue-detail-label">Current</span>
+              <span class="issue-detail-value" id="focused-current">3.2:1</span>
+            </div>
+            
+            <div class="issue-detail" style="padding: 8px 0;">
+              <span class="issue-detail-label">Required</span>
+              <span class="issue-detail-value" id="focused-required">4.5:1</span>
+            </div>
+            
+            <!-- Fix Button -->
+            <button class="btn btn-gradient btn-lg" id="focused-fix-btn" onclick="applyFocusedFix()" style="margin-top: 16px; width: 100%;">
+              <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+              </svg>
+              Fix This Issue
+            </button>
+          </div>
+        </div>
+        
+        <!-- Navigation -->
+        <div style="display: flex; gap: 8px; margin-top: 16px;">
+          <button class="btn btn-outline" onclick="navigateFocused(-1)" id="focused-prev-btn" style="flex: 1;">
+            <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m15 18-6-6 6-6"/>
+            </svg>
+            Previous
+          </button>
+          
+          <button class="btn btn-secondary" onclick="exitFocusedMode()" style="flex: 1;">
+            <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <path d="M9 3v18"/>
+            </svg>
+            Back to List
+          </button>
+          
+          <button class="btn btn-outline" onclick="navigateFocused(1)" id="focused-next-btn" style="flex: 1;">
+            Next
+            <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m9 18 6-6-6-6"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
       <!-- Success State -->
       <div id="success-state" class="success-card hidden" style="margin-top: 20px;">
         <div class="success-icon">
@@ -2161,6 +2323,9 @@
     let billingCycle = 'monthly';
     let teamData = null;
     let memberToRemove = null;
+    // Focused navigation state
+    let focusedIssueIndex = -1;
+    let isFocusedMode = false;
     
     // ============================================
     // ELEMENTS
@@ -2336,6 +2501,7 @@
           break;
           
         case 'fixed':
+          // Update list view card if present
           const card = document.querySelector(`[data-index="${msg.index}"]`);
           if (card) {
             card.classList.add('fixed');
@@ -2350,7 +2516,36 @@
               fixBtn.disabled = true;
             }
           }
-          showToast('Fix applied!', 'success');
+
+          // NEW: Handle focused mode UI updates
+          if (isFocusedMode && msg.index === focusedIssueIndex) {
+            const fixBtn = document.getElementById('focused-fix-btn');
+            if (fixBtn) {
+              fixBtn.innerHTML = `
+                <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M20 6 9 17l-5-5"/>
+                </svg>
+                Fixed!
+              `;
+              fixBtn.disabled = true;
+              fixBtn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+            }
+
+            showToast('✅ Fix applied! Moving to next issue...', 'success');
+
+            // Auto-navigate to next issue after 1 second
+            setTimeout(() => {
+              if (focusedIssueIndex < currentIssues.length - 1) {
+                navigateFocused(1);
+              } else {
+                showToast('🎉 All issues reviewed!', 'success');
+                exitFocusedMode();
+              }
+            }, 1000);
+          } else {
+            showToast('Fix applied!', 'success');
+          }
+
           break;
           
         case 'license-updated':
@@ -2608,11 +2803,11 @@
               <span class="issue-detail-value">${issue.required}</span>
             </div>
             <div class="issue-actions">
-              <button class="btn btn-outline btn-sm" onclick="jumpToElement('${issue.elementId}')">
+              <button class="btn btn-primary btn-sm" onclick="enterFocusedMode(${index})">
                 <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M15 10l-4 4l6 6l4 -16l-16 4l6 6l4 -4"/>
                 </svg>
-                Jump to
+                Jump to & Fix
               </button>
               ${issue.fix ? `
                 <button class="btn btn-primary btn-sm fix-btn" onclick="applyFix(${index})">
@@ -2852,6 +3047,159 @@
     }
     
     // ============================================
+    // ============================================
+    // FOCUSED NAVIGATION FUNCTIONS
+    // ============================================
+
+    function enterFocusedMode(index) {
+      if (index < 0 || index >= currentIssues.length) return;
+      
+      focusedIssueIndex = index;
+      isFocusedMode = true;
+      
+      // Hide regular results, show focused view
+      document.getElementById('results-section').classList.add('hidden');
+      const successState = document.getElementById('success-state');
+      if (successState) successState.classList.add('hidden');
+      document.getElementById('focused-issue-view').classList.remove('hidden');
+      
+      // Update focused view
+      updateFocusedView();
+      
+      // Jump to element in Figma
+      const issue = currentIssues[focusedIssueIndex];
+      parent.postMessage({
+        pluginMessage: {
+          type: 'jump',
+          id: issue.elementId
+        }
+      }, '*');
+    }
+
+    function updateFocusedView() {
+      if (!isFocusedMode || focusedIssueIndex < 0) return;
+      
+      const issue = currentIssues[focusedIssueIndex];
+      const total = currentIssues.length;
+      
+      // Update counter
+      document.getElementById('focused-counter').textContent = 
+        `Issue ${focusedIssueIndex + 1} of ${total}`;
+      
+      // Update indicator
+      const indicator = document.getElementById('focused-indicator');
+      indicator.className = `issue-indicator ${issue.severity}`;
+      
+      // Update details
+      document.getElementById('focused-type').textContent = issue.type;
+      document.getElementById('focused-element').textContent = issue.elementName;
+      document.getElementById('focused-element-type').textContent = issue.elementType || 'Text Layer';
+      document.getElementById('focused-current').textContent = issue.current;
+      document.getElementById('focused-required').textContent = issue.required;
+      
+      // Update fix button
+      const fixBtn = document.getElementById('focused-fix-btn');
+      if (issue.fix) {
+        fixBtn.style.display = 'flex';
+        fixBtn.disabled = false;
+        fixBtn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+        fixBtn.innerHTML = `
+          <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+          </svg>
+          Fix This Issue
+        `;
+      } else {
+        fixBtn.style.display = 'none';
+      }
+      
+      // Update navigation buttons
+      const prevBtn = document.getElementById('focused-prev-btn');
+      const nextBtn = document.getElementById('focused-next-btn');
+      
+      prevBtn.disabled = focusedIssueIndex === 0;
+      nextBtn.disabled = focusedIssueIndex === total - 1;
+    }
+
+    function navigateFocused(direction) {
+      const newIndex = focusedIssueIndex + direction;
+      
+      if (newIndex >= 0 && newIndex < currentIssues.length) {
+        focusedIssueIndex = newIndex;
+        updateFocusedView();
+        
+        // Jump to next element
+        const issue = currentIssues[focusedIssueIndex];
+        parent.postMessage({
+          pluginMessage: {
+            type: 'jump',
+            id: issue.elementId
+          }
+        }, '*');
+      }
+    }
+
+    function exitFocusedMode() {
+      isFocusedMode = false;
+      focusedIssueIndex = -1;
+      
+      // Hide focused view, show regular results
+      document.getElementById('focused-issue-view').classList.add('hidden');
+      document.getElementById('results-section').classList.remove('hidden');
+    }
+
+    function applyFocusedFix() {
+      if (focusedIssueIndex < 0 || focusedIssueIndex >= currentIssues.length) return;
+      
+      const issue = currentIssues[focusedIssueIndex];
+      if (!issue.fix) return;
+      
+      // Disable button and show loading
+      const fixBtn = document.getElementById('focused-fix-btn');
+      fixBtn.disabled = true;
+      fixBtn.innerHTML = `
+        <span class="spinner"></span>
+        Applying Fix...
+      `;
+      
+      // Apply fix
+      parent.postMessage({
+        pluginMessage: {
+          type: 'apply-fix',
+          index: focusedIssueIndex
+        }
+      }, '*');
+    }
+
+    // Keyboard navigation for focused mode
+    document.addEventListener('keydown', (e) => {
+      if (!isFocusedMode) return;
+      
+      // Left arrow = Previous
+      if (e.key === 'ArrowLeft' && focusedIssueIndex > 0) {
+        e.preventDefault();
+        navigateFocused(-1);
+      }
+      
+      // Right arrow = Next
+      if (e.key === 'ArrowRight' && focusedIssueIndex < currentIssues.length - 1) {
+        e.preventDefault();
+        navigateFocused(1);
+      }
+      
+      // Escape = Exit focused mode
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        exitFocusedMode();
+      }
+      
+      // F = Fix current issue
+      if ((e.key === 'f' || e.key === 'F') && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        applyFocusedFix();
+      }
+    });
+
     // INITIALIZE
     // ============================================
     updateWcagDescription();
