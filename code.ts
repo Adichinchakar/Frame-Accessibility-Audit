@@ -28,6 +28,7 @@ interface Issue {
   id: string;
   elementId: string;
   elementName: string;
+  elementType: string;  // NEW: Shows element type (Text Layer, Button, etc.)
   type: string;
   severity: 'fail' | 'warning';
   current: string;
@@ -245,7 +246,7 @@ figma.ui.onmessage = async (msg) => {
     showOverlays = msg.showOverlay !== false;
     
     currentIssues = [];
-    removeOverlay();
+    await removeOverlay();  // FIXED: Await async function
     
     figma.ui.postMessage({ type: 'started' });
     
@@ -290,7 +291,7 @@ figma.ui.onmessage = async (msg) => {
     figma.ui.postMessage({ type: 'results', issues: currentIssues, count: currentIssues.length });
     
     if (showOverlays && currentIssues.length > 0) {
-      createOverlay();
+      await createOverlay();  // FIXED: Await async function
     }
     
     figma.notify(`Found ${currentIssues.length} issues`);
@@ -301,9 +302,9 @@ figma.ui.onmessage = async (msg) => {
     showOverlays = msg.show === true;
     
     if (!showOverlays) {
-      removeOverlay();
+      await removeOverlay();  // FIXED: Await async function
     } else if (currentIssues.length > 0 && selectedFrame) {
-      createOverlay();
+      await createOverlay();  // FIXED: Await async function
     }
   }
   
@@ -317,10 +318,18 @@ figma.ui.onmessage = async (msg) => {
   
   // ========== JUMP TO ELEMENT ==========
   if (msg.type === 'jump') {
-    const node = figma.getNodeById(msg.id);
-    if (node) {
-      figma.currentPage.selection = [node as SceneNode];
-      figma.viewport.scrollAndZoomIntoView([node as SceneNode]);
+    try {
+      const node = await figma.getNodeByIdAsync(msg.id);  // FIXED: Use async version
+      if (node) {
+        figma.currentPage.selection = [node as SceneNode];
+        figma.viewport.scrollAndZoomIntoView([node as SceneNode]);
+        figma.notify('✅ Jumped to element');
+      } else {
+        figma.notify('❌ Element not found');
+      }
+    } catch (error) {
+      figma.notify('❌ Unable to jump to element');
+      console.error('Jump error:', error);
     }
   }
   
@@ -420,6 +429,7 @@ function analyzeContrast(node: TextNode) {
         id: `${node.id}-contrast`,
         elementId: node.id,
         elementName: node.name || 'Text',
+        elementType: getElementType(node),  // FIXED: Add element type
         type: 'Color Contrast',
         severity: 'fail',
         current: `${ratio.toFixed(1)}:1`,
@@ -449,6 +459,7 @@ function analyzeSpacing(node: TextNode) {
         id: `${node.id}-spacing`,
         elementId: node.id,
         elementName: node.name || 'Text',
+        elementType: getElementType(node),  // FIXED: Add element type
         type: 'Text Spacing',
         severity: 'fail',
         current: `${current.toFixed(1)}px`,
@@ -478,6 +489,7 @@ function analyzeLineHeight(node: TextNode) {
         id: `${node.id}-lineheight`,
         elementId: node.id,
         elementName: node.name || 'Text',
+        elementType: getElementType(node),  // FIXED: Add element type
         type: 'Line Height',
         severity: 'fail',
         current: `${current.toFixed(1)}px`,
@@ -503,6 +515,7 @@ function analyzeParagraphSpacing(node: TextNode) {
         id: `${node.id}-paragraph`,
         elementId: node.id,
         elementName: node.name || 'Text',
+        elementType: getElementType(node),  // FIXED: Add element type
         type: 'Paragraph Spacing',
         severity: 'fail',
         current: `${current.toFixed(1)}px`,
@@ -518,13 +531,13 @@ function analyzeParagraphSpacing(node: TextNode) {
 // OVERLAY
 // ============================================
 
-function createOverlay() {
+async function createOverlay() {
   if (!selectedFrame) return;
   
   const fb = selectedFrame.absoluteBoundingBox;
   if (!fb) return;
   
-  removeOverlay();
+  await removeOverlay();  // FIXED: Await async function
   
   const frame = figma.createFrame();
   frame.name = 'A11Y-Overlay';
@@ -562,12 +575,14 @@ function createOverlay() {
   }
 }
 
-function removeOverlay() {
+async function removeOverlay() {
   if (overlayId) {
     try {
-      const node = figma.getNodeById(overlayId);
+      const node = await figma.getNodeByIdAsync(overlayId);  // FIXED: Use async version
       if (node) node.remove();
-    } catch {}
+    } catch (error) {
+      console.log('Overlay already removed or not found');
+    }
     overlayId = null;
   }
 }
@@ -575,6 +590,39 @@ function removeOverlay() {
 // ============================================
 // HELPERS
 // ============================================
+
+// Detect element type for better issue descriptions
+function getElementType(node: SceneNode): string {
+  if (node.type === 'TEXT') {
+    // Check if it's part of a component
+    if (node.parent && node.parent.type === 'COMPONENT') {
+      return 'Text Layer (Component)';
+    }
+    
+    // Check if it's in an instance
+    if (node.parent && node.parent.type === 'INSTANCE') {
+      return 'Text Layer (Instance)';
+    }
+    
+    // Check common naming patterns
+    const name = node.name.toLowerCase();
+    if (name.includes('button') || name.includes('btn') || name.includes('cta')) {
+      return 'Text Layer (Button)';
+    }
+    
+    if (name.includes('label') || name.includes('title') || name.includes('heading')) {
+      return 'Text Layer (Label)';
+    }
+    
+    if (name.includes('input') || name.includes('field') || name.includes('placeholder')) {
+      return 'Text Layer (Input)';
+    }
+    
+    return 'Text Layer';
+  }
+  
+  return node.type;
+}
 
 function getColor(fills: readonly Paint[] | typeof figma.mixed): RGB | null {
   if (Array.isArray(fills) && fills[0]?.type === 'SOLID') {
@@ -610,13 +658,13 @@ function contrastRatio(c1: RGB, c2: RGB): number {
 }
 
 async function applyFix(issue: Issue) {
-  const node = figma.getNodeById(issue.elementId);
-  if (!node || node.type !== 'TEXT') {
-    figma.notify('Element not found');
-    return;
-  }
-  
   try {
+    const node = await figma.getNodeByIdAsync(issue.elementId);  // FIXED: Use async version
+    if (!node || node.type !== 'TEXT') {
+      figma.notify('❌ Element not found');
+      return;
+    }
+    
     const fontName = node.fontName;
     if (fontName !== figma.mixed) {
       await figma.loadFontAsync(fontName as FontName);
@@ -630,9 +678,10 @@ async function applyFix(issue: Issue) {
       node.paragraphSpacing = issue.fix.value;
     }
     
-    figma.notify('Fix applied!');
+    figma.notify('✅ Fix applied!');
     figma.ui.postMessage({ type: 'fixed', index: currentIssues.indexOf(issue) });
-  } catch {
-    figma.notify('Could not apply fix');
+  } catch (error) {
+    figma.notify('❌ Could not apply fix');
+    console.error('Fix error:', error);
   }
 }
