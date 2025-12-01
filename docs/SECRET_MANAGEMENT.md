@@ -1,4 +1,4 @@
-# Secret Management and Best Practices
++# Secret Management and Best Practices
 
 This document explains how to keep secrets (API keys, tokens, private keys) out of your Git repository and how to securely provide them for local development and CI.
 
