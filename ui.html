@@ -1744,6 +1744,7 @@
         <div class="results-header">
           <span class="results-title" id="results-title">Issues Found</span>
           <div class="results-summary">
+            <span class="badge badge-muted" id="wcag-badge" style="background: #dbeafe; color: #1e40af;">WCAG 2.1 AA</span>
             <span class="badge badge-destructive" id="fail-count">0 Fails</span>
             <span class="badge badge-warning" id="warning-count">0 Warnings</span>
           </div>
@@ -1899,7 +1900,7 @@
           </div>
         </div>
         
-        <div class="info-box">
+        <div class="info-box" id="wcag-info-box">
           <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"/>
             <path d="M12 16v-4"/>
@@ -1907,6 +1908,30 @@
           </svg>
           <span id="wcag-description">WCAG 2.1 AA includes mobile and touch accessibility requirements.</span>
         </div>
+        
+        <!-- Contrast Requirements Display -->
+        <div class="info-box" id="contrast-info-box" style="margin-top: 12px; background: #f0fdf4; border-color: #86efac;">
+          <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="2">
+            <path d="M9 12l2 2 4-4"/>
+            <circle cx="12" cy="12" r="10"/>
+          </svg>
+          <div style="color: #166534;">
+            <strong id="contrast-req-title">Contrast Requirements:</strong>
+            <div id="contrast-requirements" style="font-size: 11px; margin-top: 4px;">
+              Normal text: 4.5:1 • Large text: 3.0:1
+            </div>
+          </div>
+        </div>
+        
+        <!-- Save Settings Button -->
+        <button class="btn btn-primary" id="save-settings-btn" style="margin-top: 16px;">
+          <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+          Save Settings
+        </button>
       </div>
       
       <!-- Subscription (Free users) -->
@@ -2359,8 +2384,13 @@
           parent.postMessage({ pluginMessage: { type: 'get-history' } }, '*');
         }
         
-        if (tab.dataset.tab === 'settings' && userLicense?.plan === 'team' && userLicense?.teamRole === 'admin') {
-          parent.postMessage({ pluginMessage: { type: 'load-team' } }, '*');
+        if (tab.dataset.tab === 'settings') {
+          // Load current settings to ensure dropdowns are in sync
+          parent.postMessage({ pluginMessage: { type: 'get-settings' } }, '*');
+          
+          if (userLicense?.plan === 'team' && userLicense?.teamRole === 'admin') {
+            parent.postMessage({ pluginMessage: { type: 'load-team' } }, '*');
+          }
         }
       });
     });
@@ -2387,11 +2417,20 @@
         nonTextContrast: false
       };
       
+      // Get current WCAG settings from the Settings tab selectors
+      const wcagSettings = {
+        version: document.getElementById('wcag-version').value,
+        level: document.getElementById('wcag-level').value
+      };
+      
+      console.log('UI: Sending analyze request with WCAG', wcagSettings.version, wcagSettings.level);
+      
       parent.postMessage({
         pluginMessage: {
           type: 'analyze',
           checks: checks,
-          showOverlay: overlayToggle.checked
+          showOverlay: overlayToggle.checked,
+          wcagSettings: wcagSettings  // Now sending WCAG settings!
         }
       }, '*');
     });
@@ -2419,25 +2458,80 @@
     });
     
     // ============================================
-    // WCAG DESCRIPTION
+    // WCAG DESCRIPTION & REQUIREMENTS
     // ============================================
     const wcagDescriptions = {
       '2.0-AA': 'WCAG 2.0 AA is the most widely supported standard.',
-      '2.0-AAA': 'WCAG 2.0 AAA has stricter contrast requirements.',
+      '2.0-AAA': 'WCAG 2.0 AAA has stricter contrast requirements (7:1 for normal text).',
       '2.1-AA': 'WCAG 2.1 AA includes mobile and touch accessibility.',
-      '2.1-AAA': 'WCAG 2.1 AAA is the highest level for mobile.',
-      '2.2-AA': 'WCAG 2.2 AA (2023) includes focus appearance.',
-      '2.2-AAA': 'WCAG 2.2 AAA is the strictest standard available.'
+      '2.1-AAA': 'WCAG 2.1 AAA has stricter contrast requirements (7:1 for normal text).',
+      '2.2-AA': 'WCAG 2.2 AA (2023) includes focus appearance requirements.',
+      '2.2-AAA': 'WCAG 2.2 AAA is the strictest standard (7:1 contrast, 44px targets).'
+    };
+    
+    // Contrast requirements by level
+    const contrastRequirements = {
+      'AA': { normal: '4.5:1', large: '3.0:1' },
+      'AAA': { normal: '7.0:1', large: '4.5:1' }
+    };
+    
+    // Text spacing requirements by version
+    const textSpacingInfo = {
+      '2.0': 'Text spacing not required in WCAG 2.0',
+      '2.1': 'Letter spacing: 0.12em • Line height: 1.5x • Paragraph: 2x',
+      '2.2': 'Letter spacing: 0.12em • Line height: 1.5x • Paragraph: 2x'
     };
     
     function updateWcagDescription() {
       const version = document.getElementById('wcag-version').value;
       const level = document.getElementById('wcag-level').value;
+      
+      // Update description
       document.getElementById('wcag-description').textContent = wcagDescriptions[`${version}-${level}`];
+      
+      // Update contrast requirements display
+      const reqs = contrastRequirements[level];
+      const contrastEl = document.getElementById('contrast-requirements');
+      if (contrastEl && reqs) {
+        let html = `Normal text: ${reqs.normal} • Large text: ${reqs.large}`;
+        if (version !== '2.0') {
+          html += `<br>${textSpacingInfo[version]}`;
+        } else {
+          html += `<br>${textSpacingInfo['2.0']}`;
+        }
+        contrastEl.innerHTML = html;
+      }
+      
+      // Update contrast title to show level
+      const titleEl = document.getElementById('contrast-req-title');
+      if (titleEl) {
+        titleEl.textContent = `${level} Requirements:`;
+      }
+      
+      console.log('UI: WCAG settings changed to', version, level);
     }
     
     document.getElementById('wcag-version').addEventListener('change', updateWcagDescription);
     document.getElementById('wcag-level').addEventListener('change', updateWcagDescription);
+    
+    // ============================================
+    // SAVE SETTINGS BUTTON
+    // ============================================
+    document.getElementById('save-settings-btn').addEventListener('click', () => {
+      const wcagSettings = {
+        version: document.getElementById('wcag-version').value,
+        level: document.getElementById('wcag-level').value
+      };
+      
+      console.log('UI: Saving settings -', wcagSettings.version, wcagSettings.level);
+      
+      parent.postMessage({
+        pluginMessage: {
+          type: 'save-settings',
+          wcagSettings: wcagSettings
+        }
+      }, '*');
+    });
     
     // ============================================
     // MESSAGE HANDLER
@@ -2450,6 +2544,26 @@
         case 'init':
           userLicense = msg.license;
           updateUI();
+          // Load saved WCAG settings from backend
+          if (msg.wcagSettings) {
+            document.getElementById('wcag-version').value = msg.wcagSettings.version || '2.1';
+            document.getElementById('wcag-level').value = msg.wcagSettings.level || 'AA';
+            updateWcagDescription();
+            console.log('UI: Loaded WCAG settings:', msg.wcagSettings.version, msg.wcagSettings.level);
+          }
+          break;
+          
+        case 'settings-saved':
+          showToast('✅ Settings saved! WCAG ' + (msg.wcagSettings?.version || '2.1') + ' ' + (msg.wcagSettings?.level || 'AA'), 'success');
+          break;
+          
+        case 'settings-loaded':
+          if (msg.settings) {
+            document.getElementById('wcag-version').value = msg.settings.version || '2.1';
+            document.getElementById('wcag-level').value = msg.settings.level || 'AA';
+            updateWcagDescription();
+            console.log('UI: Settings loaded:', msg.settings.version, msg.settings.level);
+          }
           break;
           
         case 'frame-selected':
@@ -2486,13 +2600,28 @@
           
           currentIssues = msg.issues || [];
           
+          // Update WCAG badge to show which standard was used
+          const wcagBadge = document.getElementById('wcag-badge');
+          if (wcagBadge && msg.wcagVersion && msg.wcagLevel) {
+            wcagBadge.textContent = `WCAG ${msg.wcagVersion} ${msg.wcagLevel}`;
+            // Color code based on level
+            if (msg.wcagLevel === 'AAA') {
+              wcagBadge.style.background = '#fef3c7';
+              wcagBadge.style.color = '#92400e';
+            } else {
+              wcagBadge.style.background = '#dbeafe';
+              wcagBadge.style.color = '#1e40af';
+            }
+            console.log('UI: Results using WCAG', msg.wcagVersion, msg.wcagLevel);
+          }
+          
           if (currentIssues.length === 0) {
             resultsSection.classList.add('hidden');
             successState.classList.remove('hidden');
           } else {
             resultsSection.classList.remove('hidden');
             successState.classList.add('hidden');
-            renderIssues(currentIssues);
+            renderIssues(currentIssues, msg.wcagLevel);
           }
           break;
           
@@ -2770,7 +2899,7 @@
     // ============================================
     // RENDER ISSUES
     // ============================================
-    function renderIssues(issues) {
+    function renderIssues(issues, wcagLevel) {
       const fails = issues.filter(i => i.severity === 'fail').length;
       const warnings = issues.filter(i => i.severity === 'warning').length;
       
@@ -2778,12 +2907,19 @@
       document.getElementById('fail-count').textContent = `${fails} Fails`;
       document.getElementById('warning-count').textContent = `${warnings} Warnings`;
       
-      issuesList.innerHTML = issues.map((issue, index) => `
+      issuesList.innerHTML = issues.map((issue, index) => {
+        // Format the WCAG criteria display
+        const wcagCriteria = issue.wcagCriteria || '';
+        const criteriaDisplay = wcagCriteria ? `WCAG ${wcagCriteria}` : '';
+        const levelDisplay = issue.wcagLevel || wcagLevel || 'AA';
+        
+        return `
         <div class="issue-card" data-index="${index}">
           <div class="issue-header" onclick="toggleIssue(this)">
             <div class="issue-type">
               <span class="issue-indicator ${issue.severity}"></span>
               ${issue.type}
+              ${levelDisplay === 'AAA' ? '<span style="font-size: 10px; background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">AAA</span>' : ''}
             </div>
             <svg class="icon icon-sm issue-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="m6 9 6 6 6-6"/>
@@ -2794,13 +2930,19 @@
               <span class="issue-detail-label">Element</span>
               <span class="issue-detail-value">${escapeHtml(issue.elementName)}</span>
             </div>
+            ${criteriaDisplay ? `
+            <div class="issue-detail">
+              <span class="issue-detail-label">WCAG Criteria</span>
+              <span class="issue-detail-value" style="color: #1e40af;">${criteriaDisplay} (${levelDisplay})</span>
+            </div>
+            ` : ''}
             <div class="issue-detail">
               <span class="issue-detail-label">Current</span>
-              <span class="issue-detail-value">${issue.current}</span>
+              <span class="issue-detail-value" style="color: #b91c1c;">${issue.current}</span>
             </div>
             <div class="issue-detail">
-              <span class="issue-detail-label">Required</span>
-              <span class="issue-detail-value">${issue.required}</span>
+              <span class="issue-detail-label">Required (${levelDisplay})</span>
+              <span class="issue-detail-value" style="color: #166534;">${issue.required}</span>
             </div>
             <div class="issue-actions">
               <button class="btn btn-primary btn-sm" onclick="enterFocusedMode(${index})">
@@ -2820,7 +2962,8 @@
             </div>
           </div>
         </div>
-      `).join('');
+      `;
+      }).join('');
     }
     
     // ============================================
@@ -2837,7 +2980,15 @@
       }
       
       empty.classList.add('hidden');
-      list.innerHTML = items.map(item => `
+      list.innerHTML = items.map(item => {
+        const wcagInfo = item.wcagVersion && item.wcagLevel 
+          ? `WCAG ${item.wcagVersion} ${item.wcagLevel}` 
+          : '';
+        const levelStyle = item.wcagLevel === 'AAA' 
+          ? 'background: #fef3c7; color: #92400e;' 
+          : 'background: #dbeafe; color: #1e40af;';
+        
+        return `
         <div class="history-item" onclick="selectFrame('${item.frameId}')">
           <div class="history-icon">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2848,11 +2999,15 @@
           </div>
           <div class="history-info">
             <div class="history-name">${escapeHtml(item.frameName || 'Untitled')}</div>
-            <div class="history-meta">${timeAgo(item.analyzedAt)}</div>
+            <div class="history-meta">
+              ${timeAgo(item.analyzedAt)}
+              ${wcagInfo ? `<span style="${levelStyle} padding: 1px 6px; border-radius: 4px; font-size: 10px; margin-left: 6px;">${wcagInfo}</span>` : ''}
+            </div>
           </div>
           <span class="history-issues">${item.issueCount || 0} issues</span>
         </div>
-      `).join('');
+      `;
+      }).join('');
     }
     
     // ============================================
@@ -3081,8 +3236,9 @@
       
       const issue = currentIssues[focusedIssueIndex];
       const total = currentIssues.length;
+      const levelDisplay = issue.wcagLevel || 'AA';
       
-      // Update counter
+      // Update counter with WCAG level
       document.getElementById('focused-counter').textContent = 
         `Issue ${focusedIssueIndex + 1} of ${total}`;
       
@@ -3090,12 +3246,24 @@
       const indicator = document.getElementById('focused-indicator');
       indicator.className = `issue-indicator ${issue.severity}`;
       
-      // Update details
-      document.getElementById('focused-type').textContent = issue.type;
+      // Update details with WCAG criteria
+      const typeWithLevel = levelDisplay === 'AAA' 
+        ? `${issue.type} <span style="font-size: 11px; background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">AAA</span>`
+        : issue.type;
+      document.getElementById('focused-type').innerHTML = typeWithLevel;
       document.getElementById('focused-element').textContent = issue.elementName;
-      document.getElementById('focused-element-type').textContent = issue.elementType || 'Text Layer';
-      document.getElementById('focused-current').textContent = issue.current;
-      document.getElementById('focused-required').textContent = issue.required;
+      
+      // Show WCAG criteria if available
+      const elementTypeEl = document.getElementById('focused-element-type');
+      if (issue.wcagCriteria) {
+        elementTypeEl.innerHTML = `${issue.elementType || 'Text Layer'} <span style="color: #1e40af;">• WCAG ${issue.wcagCriteria}</span>`;
+      } else {
+        elementTypeEl.textContent = issue.elementType || 'Text Layer';
+      }
+      
+      // Color code current (red) and required (green) with level
+      document.getElementById('focused-current').innerHTML = `<span style="color: #b91c1c;">${issue.current}</span>`;
+      document.getElementById('focused-required').innerHTML = `<span style="color: #166534;">${issue.required}</span>`;
       
       // Update fix button
       const fixBtn = document.getElementById('focused-fix-btn');
@@ -3202,7 +3370,11 @@
 
     // INITIALIZE
     // ============================================
+    // Initialize WCAG description and requirements display
     updateWcagDescription();
+    
+    // Request settings from backend on load
+    parent.postMessage({ pluginMessage: { type: 'get-settings' } }, '*');
   </script>
 </body>
 </html>
