@@ -1,0 +1,25 @@
+# Backup of .gitignore taken on 2025-12-06 09:00:00 (local time)
+
+node_modules/
+dist/
+*.log
+.DS_Store
+.env
+.env.*
+.secrets
+
+# Private keys and certs
+.ssh/
+*.pem
+*.key
+
+# Editor folders
+.vscode/
+.idea/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+// End of .gitignore backup

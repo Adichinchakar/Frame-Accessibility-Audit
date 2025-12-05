@@ -1,0 +1,22 @@
+// Backup of manifest.json taken on 2025-12-06 09:00:00 (local time)
+
+{
+	"name": "A11y Audit Pro",
+	"id": "1571488947872228693",
+	"api": "1.0.0",
+	"main": "dist/code.js",
+	"ui": "dist/ui.html",
+	"editorType": ["figma"],
+	"documentAccess": "dynamic-page",
+	"networkAccess": {
+		"allowedDomains": [
+			"https://*.razorpay.com",
+			"https://api.razorpay.com",
+			"https://checkout.razorpay.com",
+			"https://lumberjack.razorpay.com",
+			"https://cdn.razorpay.com"
+		]
+	}
+}
+
+// End of manifest.json backup

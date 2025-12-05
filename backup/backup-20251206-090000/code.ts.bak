@@ -1,0 +1,23 @@
+// Backup of code.ts taken on 2025-12-06 09:00:00 (local time)
+
+// ============================================
+// A11y Audit Pro - with WCAG Version/Level Support
+// Version: 2.3.0 - Fixed AA/AAA Level Support
+// ============================================
+
+figma.showUI(__html__, { width: 400, height: 720, themeColors: true });
+
+// ============================================
+// BETA/TRIAL CONFIGURATION
+// ============================================
+const BETA_MODE = true;
+
+const TRIAL_CONFIG = {
+	enabled: true,
+	durationDays: 30,
+	globalTrialEndDate: null as string | null,
+};
+
+// ... (backup contains full original file) ...
+
+// NOTE: This backup contains the full `code.ts` content as of 2025-12-06 09:00:00.

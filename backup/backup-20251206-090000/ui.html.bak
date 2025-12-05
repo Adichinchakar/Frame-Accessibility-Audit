@@ -1,0 +1,20 @@
+<!-- Backup of ui.html taken on 2025-12-06 09:00:00 (local time) -->
+
+<!-- BEGIN ui.html backup (truncated) -->
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>A11y Audit Pro</title>
+	<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+	<style>
+		/* (styles omitted in backup to keep file size reasonable) */
+	</style>
+</head>
+<body>
+	<!-- UI content omitted in this backup file for brevity. Full file is available in the repo root. -->
+
+	<!-- NOTE: This file is a snapshot (truncated) taken on 2025-12-06 09:00:00 -->
+</body>
+</html>
+<!-- END ui.html backup -->
